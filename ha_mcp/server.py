@@ -10,6 +10,7 @@ Environment Variables:
     HA_URL:   Base URL of the Home Assistant instance, e.g. ``http://homeassistant.local:8123``.
     HA_TOKEN: Long-lived access token from your HA profile.
 """
+
 from __future__ import annotations
 
 import os
@@ -18,7 +19,17 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from ha_mcp.client import HomeAssistantClient
-from ha_mcp.tools import addons, automations, dashboards, entities, logs, system
+from ha_mcp.tools import (
+    addons,
+    automations,
+    dashboards,
+    entities,
+    helpers,
+    logs,
+    notifications,
+    registry,
+    system,
+)
 
 
 def _load_client() -> HomeAssistantClient:
@@ -59,9 +70,11 @@ def create_server() -> FastMCP:
         instructions=(
             "You are connected to a Home Assistant instance. "
             "You can control smart home devices, manage automations, dashboards, add-ons, "
-            "view logs, check system health, and more. "
+            "view logs, check system health, send notifications, manage input helpers and timers, "
+            "and inspect the device and integration registries. "
             "Use call_service for controlling physical devices. "
             "Use set_entity_state only for virtual/input entities. "
+            "Use the dedicated set_input_* tools for input helpers instead of call_service. "
             "Supervisor tools (add-ons, updates, backups) require HA OS or Supervised installation."
         ),
     )
@@ -72,6 +85,9 @@ def create_server() -> FastMCP:
     logs.register(mcp, client)
     automations.register(mcp, client)
     system.register(mcp, client)
+    notifications.register(mcp, client)
+    helpers.register(mcp, client)
+    registry.register(mcp, client)
 
     return mcp
 
