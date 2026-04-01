@@ -1,0 +1,134 @@
+"""Tests for notification tools."""
+
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import MagicMock
+
+import pytest
+
+from ha_mcp.tools import notifications
+from tests.conftest import ToolCapture
+
+_SERVICES = [
+    {"domain": "notify", "services": {"notify": {}, "mobile_app_my_phone": {}}},
+    {"domain": "light", "services": {"turn_on": {}}},
+]
+
+_STATES = [
+    {
+        "entity_id": "persistent_notification.alert1",
+        "state": "notifying",
+        "attributes": {"message": "Update available", "title": "HA Update"},
+    },
+    {"entity_id": "light.kitchen", "state": "on", "attributes": {}},
+]
+
+
+@pytest.fixture
+def tools(mock_client: MagicMock) -> dict[str, Any]:
+    capture = ToolCapture()
+    notifications.register(capture, mock_client)  # type: ignore[arg-type]
+    return capture.tools
+
+
+# --- list_notification_services ---
+
+
+async def test_list_notification_services(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    mock_client.get.return_value = _SERVICES
+    result = await tools["list_notification_services"]()
+    assert "notify" in result
+    assert "mobile_app_my_phone" in result
+    assert "turn_on" not in result
+
+
+async def test_list_notification_services_no_notify_domain(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    mock_client.get.return_value = [{"domain": "light", "services": {"turn_on": {}}}]
+    result = await tools["list_notification_services"]()
+    assert result == []
+
+
+# --- send_notification ---
+
+
+async def test_send_notification_minimal(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    mock_client.post.return_value = []
+    await tools["send_notification"]("Hello world")
+    mock_client.post.assert_called_once_with(
+        "/api/services/notify/notify",
+        {"message": "Hello world"},
+    )
+
+
+async def test_send_notification_full(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    mock_client.post.return_value = []
+    await tools["send_notification"](
+        "Motion detected",
+        title="Security",
+        service="mobile_app_my_phone",
+        target=["device/abc123"],
+        data={"push": {"sound": "default"}},
+    )
+    mock_client.post.assert_called_once_with(
+        "/api/services/notify/mobile_app_my_phone",
+        {
+            "message": "Motion detected",
+            "title": "Security",
+            "target": ["device/abc123"],
+            "data": {"push": {"sound": "default"}},
+        },
+    )
+
+
+# --- list_persistent_notifications ---
+
+
+async def test_list_persistent_notifications(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    mock_client.get.return_value = _STATES
+    result = await tools["list_persistent_notifications"]()
+    assert len(result) == 1
+    assert result[0]["entity_id"] == "persistent_notification.alert1"
+
+
+# --- create_persistent_notification ---
+
+
+async def test_create_persistent_notification_minimal(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    mock_client.post.return_value = []
+    await tools["create_persistent_notification"]("Backup complete")
+    mock_client.post.assert_called_once_with(
+        "/api/services/persistent_notification/create",
+        {"message": "Backup complete"},
+    )
+
+
+async def test_create_persistent_notification_full(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    mock_client.post.return_value = []
+    await tools["create_persistent_notification"](
+        "Update ready", title="HA Update", notification_id="ha_update"
+    )
+    mock_client.post.assert_called_once_with(
+        "/api/services/persistent_notification/create",
+        {"message": "Update ready", "title": "HA Update", "notification_id": "ha_update"},
+    )
+
+
+# --- dismiss_persistent_notification ---
+
+
+async def test_dismiss_persistent_notification(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    mock_client.post.return_value = []
+    await tools["dismiss_persistent_notification"]("ha_update")
+    mock_client.post.assert_called_once_with(
+        "/api/services/persistent_notification/dismiss",
+        {"notification_id": "ha_update"},
+    )

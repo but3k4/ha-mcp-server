@@ -2,6 +2,8 @@
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Home Assistant - control entities, automations, dashboards, add-ons, and system settings from any MCP-compatible LLM client.
 
+![Claude Desktop connected to Home Assistant](docs/screenshot.png)
+
 ## Table of Contents
 
 - [Features](#features)
@@ -16,6 +18,15 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 - [Connecting to Claude Desktop](#connecting-to-claude-desktop)
 - [Connecting to Claude Code](#connecting-to-claude-code)
 - [Available Tools](#available-tools)
+  - [Entities & Services](#entities--services)
+  - [Dashboards (Lovelace)](#dashboards-lovelace)
+  - [Add-ons (Supervisor only)](#add-ons-supervisor-only)
+  - [Logs](#logs)
+  - [Automations, Scripts & Scenes](#automations-scripts--scenes)
+  - [System & Configuration](#system--configuration)
+  - [Notifications](#notifications)
+  - [Input Helpers & Timers](#input-helpers--timers)
+  - [Device & Integration Registry](#device--integration-registry)
 - [Notes on Supervisor Tools](#notes-on-supervisor-tools)
 - [Development](#development)
 
@@ -31,15 +42,18 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 | Logs | Error log, Supervisor logs, Core logs, Host logs, add-on logs |
 | Automations | List, trigger, enable, disable, and reload automations. Run scripts and activate scenes |
 | System | HA config, validate config, restart, integrations, health, users, backups, OS/Core/Supervisor updates |
+| Notifications | Send notifications via any notify service, manage persistent UI notifications |
+| Input Helpers & Timers | Set input_boolean, input_number, input_select, input_text, input_datetime, and timer entities |
+| Device & Integration Registry | Browse device hardware info, list config entries, reload integrations |
 
-**60 tools** in total.
+**77 tools** in total.
 
 ---
 
 ## Requirements
 
 - **Python 3.14+**
-- **[uv](https://docs.astral.sh/uv/)** — Python package and environment manager
+- **[uv](https://docs.astral.sh/uv/)** - Python package and environment manager
 - A running **Home Assistant** instance reachable over the network
 - A **long-lived access token** from your HA profile (see below)
 
@@ -393,6 +407,38 @@ After editing the config, restart Claude Code or run `/mcp` to reload servers.
 | `list_users` | List all HA user accounts |
 | `create_backup` | Trigger a full system backup |
 | `list_backups` | List all available backups |
+
+### Notifications
+
+| Tool | Description |
+|---|---|
+| `list_notification_services` | List available notify service names (e.g. `notify`, `mobile_app_my_phone`) |
+| `send_notification` | Send a notification via any notify service, with optional title, target, and extra data |
+| `list_persistent_notifications` | List active persistent notifications in the HA UI bell menu |
+| `create_persistent_notification` | Create a persistent notification (Markdown supported. Optional stable ID for upsert) |
+| `dismiss_persistent_notification` | Dismiss a persistent notification by its notification ID |
+
+### Input Helpers & Timers
+
+| Tool | Description |
+|---|---|
+| `list_input_helpers` | List all helper and timer entities, optionally filtered by domain |
+| `set_input_boolean` | Turn an `input_boolean` helper on or off |
+| `set_input_number` | Set the numeric value of an `input_number` helper |
+| `set_input_select` | Select an option on an `input_select` helper |
+| `set_input_text` | Set the text value of an `input_text` helper |
+| `set_input_datetime` | Set date, time, or combined datetime on an `input_datetime` helper |
+| `start_timer` | Start or restart a `timer` entity, with optional duration override |
+| `pause_timer` | Pause a running `timer`, preserving the remaining time |
+| `cancel_timer` | Cancel a `timer` without firing the `timer.finished` event |
+
+### Device & Integration Registry
+
+| Tool | Description |
+|---|---|
+| `get_device_registry` | List physical devices with manufacturer, model, firmware, and area assignments |
+| `list_config_entries` | List all loaded integration config entries with `entry_id`, domain, title, and state |
+| `reload_config_entry` | Reload a single integration by `entry_id` without restarting HA |
 
 ---
 
