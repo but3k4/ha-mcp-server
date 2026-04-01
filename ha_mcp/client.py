@@ -3,15 +3,45 @@ Async HTTP client for the Home Assistant REST and Supervisor APIs.
 
 Wraps aiohttp with auth headers and consistent error handling.
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 import aiohttp
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 class HomeAssistantError(Exception):
     """Raised when the Home Assistant API returns an error response."""
+
+
+async def _parse_response(response: aiohttp.ClientResponse) -> Any:
+    """
+    Parse an aiohttp response, raising on error status codes.
+
+    Args:
+        response: The aiohttp response object.
+
+    Returns:
+        Parsed JSON body, or raw text if the body is not JSON.
+
+    Raises:
+        HomeAssistantError: If the HTTP status code indicates an error.
+    """
+
+    if response.status >= 400:
+        body = await response.text()
+        raise HomeAssistantError(f"HA API error {response.status} for {response.url}: {body}")
+
+    content_type = response.headers.get("Content-Type", "")
+
+    if "application/json" in content_type:
+        return await response.json()
+
+    return await response.text()
 
 
 class HomeAssistantClient:
@@ -86,7 +116,7 @@ class HomeAssistantClient:
         url = f"{self._base_url}{path}"
 
         async with session.get(url, params=params) as response:
-            return await self._parse(response)
+            return await _parse_response(response)
 
     async def post(self, path: str, payload: dict[str, Any] | None = None) -> Any:
         """Perform a POST request against the HA API.
@@ -106,7 +136,7 @@ class HomeAssistantClient:
         url = f"{self._base_url}{path}"
 
         async with session.post(url, json=payload or {}) as response:
-            return await self._parse(response)
+            return await _parse_response(response)
 
     async def delete(self, path: str) -> Any:
         """
@@ -125,32 +155,4 @@ class HomeAssistantClient:
         session = self._require_session()
         url = f"{self._base_url}{path}"
         async with session.delete(url) as response:
-            return await self._parse(response)
-
-    @staticmethod
-    async def _parse(response: aiohttp.ClientResponse) -> Any:
-        """
-        Parse an aiohttp response, raising on error status codes.
-
-        Args:
-            response: The aiohttp response object.
-
-        Returns:
-            Parsed JSON body, or raw text if the body is not JSON.
-
-        Raises:
-            HomeAssistantError: If the HTTP status code indicates an error.
-        """
-
-        if response.status >= 400:
-            body = await response.text()
-            raise HomeAssistantError(
-                f"HA API error {response.status} for {response.url}: {body}"
-            )
-
-        content_type = response.headers.get("Content-Type", "")
-
-        if "application/json" in content_type:
-            return await response.json()
-
-        return await response.text()
+            return await _parse_response(response)

@@ -4,13 +4,15 @@ MCP tools for Home Assistant Supervisor add-on management.
 These tools require a Supervisor-enabled installation (e.g. Home Assistant OS or Supervised).
 They use the Supervisor API at ``/api/hassio/``.
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
-from ha_mcp.client import HomeAssistantClient
+    from ha_mcp.client import HomeAssistantClient
 
 _SUPERVISOR_PREFIX = "/api/hassio"
 
@@ -28,6 +30,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def list_addons() -> list[dict[str, Any]]:
         """List all available and installed Home Assistant add-ons.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Use
+        ``get_addon_info`` to retrieve full details for a specific add-on, or
+        ``set_addon_options`` to configure one.
+
         Returns:
             List of add-on summary objects with ``slug``, ``name``, ``state``,
             ``version``, ``version_latest``, and ``update_available``.
@@ -42,6 +49,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def get_addon_info(addon_slug: str) -> dict[str, Any]:
         """
         Get detailed information about a specific add-on.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Use
+        ``get_addon_logs`` to inspect runtime output, or ``set_addon_options``
+        to change configuration.
 
         Args:
             addon_slug: Add-on slug identifier, e.g. ``core_mosquitto`` or ``a0d7b954_vscode``.
@@ -62,6 +74,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Install a Home Assistant add-on from the store.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Args:
             addon_slug: Add-on slug to install, e.g. ``core_ssh``.
 
@@ -80,6 +95,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def uninstall_addon(addon_slug: str) -> str:
         """
         Uninstall a Home Assistant add-on.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Args:
             addon_slug: Add-on slug to remove.
@@ -100,6 +118,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Update a Home Assistant add-on to the latest available version.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Args:
             addon_slug: Add-on slug to update.
 
@@ -118,6 +139,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def start_addon(addon_slug: str) -> str:
         """
         Start a stopped Home Assistant add-on.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Args:
             addon_slug: Add-on slug to start.
@@ -138,6 +162,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Stop a running Home Assistant add-on.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Args:
             addon_slug: Add-on slug to stop.
 
@@ -156,6 +183,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def restart_addon(addon_slug: str) -> str:
         """
         Restart a Home Assistant add-on.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Args:
             addon_slug: Add-on slug to restart.
@@ -176,6 +206,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Fetch the stdout/stderr logs for a specific add-on.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Returns an
+        empty string if the add-on has never started or has no log output.
+
         Args:
             addon_slug: Add-on slug whose logs to retrieve.
 
@@ -190,6 +224,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def set_addon_options(addon_slug: str, options: dict[str, Any]) -> str:
         """
         Update configuration options for a Home Assistant add-on.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. The add-on
+        must be restarted after updating options for changes to take effect.
+        Use ``get_addon_info`` to inspect the current ``options`` schema.
 
         Args:
             addon_slug: Add-on slug to configure.
@@ -212,6 +251,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         List all configured add-on repositories (stores).
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Returns:
             List of repository objects with ``slug``, ``name``, ``source``, and ``maintainer``.
         """
@@ -225,6 +267,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def add_addon_repository(repository_url: str) -> str:
         """
         Add a third-party add-on repository to Home Assistant.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Args:
             repository_url: Git URL of the repository, e.g. ``https://github.com/owner/repo``.

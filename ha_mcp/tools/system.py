@@ -1,13 +1,15 @@
 """
 MCP tools for Home Assistant system information, configuration, and updates.
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
-from ha_mcp.client import HomeAssistantClient
+    from ha_mcp.client import HomeAssistantClient
 
 _SUPERVISOR_PREFIX = "/api/hassio"
 
@@ -40,7 +42,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Validate the Home Assistant YAML configuration files.
 
         Returns:
-            Validation result with ``result`` (``valid`` / ``invalid``) and ``errors`` list.
+            Validation result with ``result`` (``"valid"`` or ``"invalid"``) and
+            an ``errors`` list of human-readable strings describing each problem,
+            including YAML parse errors and unknown keys.
         """
 
         async with client:
@@ -65,6 +69,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Get Supervisor system information including version and update status.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Use the
+        returned ``version_latest`` field to decide whether to call
+        ``update_supervisor``.
+
         Returns:
             Supervisor info dict with versions, channel, and update availability.
         """
@@ -78,6 +87,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def get_core_info() -> dict[str, Any]:
         """
         Get Home Assistant Core process information via the Supervisor.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Use the
+        returned ``version_latest`` field to decide whether to call
+        ``update_core``.
 
         Returns:
             Core info including version, update availability, and boot state.
@@ -93,6 +107,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Get information about the underlying host OS.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Returns:
             Host info including hostname, OS version, CPU usage, and memory.
         """
@@ -106,6 +123,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def get_os_info() -> dict[str, Any]:
         """
         Get Home Assistant OS information and update status.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Use the
+        returned ``version_latest`` field to decide whether to call
+        ``update_os``.
 
         Returns:
             OS info with version and update availability.
@@ -121,6 +143,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Update the Home Assistant Core to the latest available version.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Call
+        ``get_core_info`` first to confirm an update is available.
+
         Returns:
             Confirmation message.
         """
@@ -135,6 +161,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Update the Home Assistant Supervisor to the latest version.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Call
+        ``get_supervisor_info`` first to confirm an update is available.
+
         Returns:
             Confirmation message.
         """
@@ -148,6 +178,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def update_os() -> str:
         """
         Update the Home Assistant OS to the latest version.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core. Call
+        ``get_os_info`` first to confirm an update is available.
 
         Returns:
             Confirmation message.
@@ -175,6 +209,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Reload a specific integration config entry without restarting HA.
 
+        Raises ``HomeAssistantError`` if the integration does not support
+        reloading (not all integrations are reloadable). Use
+        ``list_integrations`` to obtain the ``entry_id``.
+
         Args:
             entry_id: The config entry ID to reload (from ``list_integrations``).
 
@@ -183,9 +221,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            result = await client.post(
-                f"/api/config/config_entries/entry/{entry_id}/reload"
-            )
+            result = await client.post(f"/api/config/config_entries/entry/{entry_id}/reload")
 
         return str(result)
 

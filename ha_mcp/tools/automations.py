@@ -1,13 +1,15 @@
 """
 MCP tools for Home Assistant automation and script management.
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
-from ha_mcp.client import HomeAssistantClient
+    from ha_mcp.client import HomeAssistantClient
 
 
 def register(mcp: FastMCP, client: HomeAssistantClient) -> None:

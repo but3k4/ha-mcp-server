@@ -1,14 +1,32 @@
 """
 MCP tools for Home Assistant entity and service management.
 """
+
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
-from ha_mcp.client import HomeAssistantClient
+    from ha_mcp.client import HomeAssistantClient
+
+# Jinja2 template that returns every entity→area mapping as a JSON list.
+# Used by both list_devices and list_entity_registry.
+_AREA_ENTITIES_TEMPLATE = (
+    "{%- set ns = namespace(entities=[]) -%}"
+    "{%- for area_id in areas() -%}"
+    "{%- for entity_id in area_entities(area_id) -%}"
+    "{%- set ns.entities = ns.entities + [{"
+    "'entity_id': entity_id,"
+    "'area_id': area_id,"
+    "'area_name': area_name(area_id)"
+    "}] -%}"
+    "{%- endfor -%}"
+    "{%- endfor -%}"
+    "{{ ns.entities | tojson }}"
+)
 
 
 def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
@@ -74,10 +92,11 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Directly set the state and attributes of an entity in the HA state machine.
 
         This is a low-level write to the state machine and does **not** send a
-        command to the underlying device. Physical devices (lights, switches,
-        thermostats, etc.) must be controlled via ``call_service``. This tool
-        is primarily useful for virtual/helper entities such as
-        ``input_boolean``, ``input_text``, or ``input_number``.
+        command to the underlying device. For physical devices (lights, switches,
+        thermostats, etc.) use ``call_service`` instead. For input helpers prefer
+        the dedicated ``set_input_boolean``, ``set_input_number``, and related
+        tools over this one. This tool is primarily useful for writing arbitrary
+        state to virtual entities that have no dedicated service.
 
         Args:
             entity_id: Full entity ID, e.g. ``input_boolean.vacation_mode``.
@@ -217,22 +236,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             ``area_id``, and ``area_name``.
         """
 
-        area_template = (
-            "{%- set ns = namespace(entities=[]) -%}"
-            "{%- for area_id in areas() -%}"
-            "{%- for entity_id in area_entities(area_id) -%}"
-            "{%- set ns.entities = ns.entities + [{"
-            "'entity_id': entity_id,"
-            "'area_id': area_id,"
-            "'area_name': area_name(area_id)"
-            "}] -%}"
-            "{%- endfor -%}"
-            "{%- endfor -%}"
-            "{{ ns.entities | tojson }}"
-        )
-
         async with client:
-            area_result = await client.post("/api/template", {"template": area_template})
+            area_result = await client.post("/api/template", {"template": _AREA_ENTITIES_TEMPLATE})
 
         async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
@@ -271,22 +276,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             ``area_id``, and ``area_name``.
         """
 
-        area_template = (
-            "{%- set ns = namespace(entities=[]) -%}"
-            "{%- for area_id in areas() -%}"
-            "{%- for entity_id in area_entities(area_id) -%}"
-            "{%- set ns.entities = ns.entities + [{"
-            "'entity_id': entity_id,"
-            "'area_id': area_id,"
-            "'area_name': area_name(area_id)"
-            "}] -%}"
-            "{%- endfor -%}"
-            "{%- endfor -%}"
-            "{{ ns.entities | tojson }}"
-        )
-
         async with client:
-            area_result = await client.post("/api/template", {"template": area_template})
+            area_result = await client.post("/api/template", {"template": _AREA_ENTITIES_TEMPLATE})
 
         async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")

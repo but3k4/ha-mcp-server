@@ -1,11 +1,15 @@
 """
 MCP tools for accessing Home Assistant system and component logs.
 """
+
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from typing import TYPE_CHECKING
 
-from ha_mcp.client import HomeAssistantClient
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
+
+    from ha_mcp.client import HomeAssistantClient
 
 _SUPERVISOR_PREFIX = "/api/hassio"
 
@@ -36,6 +40,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Get logs from the Home Assistant Supervisor process.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Returns:
             Raw Supervisor log output.
         """
@@ -47,6 +54,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def get_core_logs() -> str:
         """
         Get logs from the Home Assistant Core process via Supervisor.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Returns:
             Raw Core process log output.
@@ -60,6 +70,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Get system-level host logs from the underlying OS.
 
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
+
         Returns:
             Raw host/journald log output.
         """
@@ -71,6 +84,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     async def get_multicast_logs() -> str:
         """
         Get logs from the Home Assistant Multicast service.
+
+        Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Raises ``HomeAssistantError`` on HA Container or Core.
 
         Returns:
             Raw Multicast service log output.

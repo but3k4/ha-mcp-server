@@ -1,13 +1,15 @@
 """
 MCP tools for Home Assistant Lovelace dashboard management.
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
-from ha_mcp.client import HomeAssistantClient
+    from ha_mcp.client import HomeAssistantClient
 
 
 def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
@@ -44,12 +46,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             Full dashboard config dict with ``views``, ``title``, and ``background``.
         """
 
-        path = "/api/lovelace/config"
-        if url_path and url_path != "lovelace":
-            path = f"/api/lovelace/config?url_path={url_path}"
+        params = {"url_path": url_path} if url_path and url_path != "lovelace" else None
 
         async with client:
-            return await client.get(path)
+            return await client.get("/api/lovelace/config", params=params)
 
     @mcp.tool()
     async def create_dashboard(
