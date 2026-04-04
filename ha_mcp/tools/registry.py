@@ -34,7 +34,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         manufacturer and model rather than by entity ID.
 
         The HA REST API may return either a bare list or a dict with a
-        ``devices`` key depending on the HA version; this tool normalises
+        ``devices`` key depending on the HA version. This tool normalises
         both forms to a plain list.
 
         Returns:
@@ -42,9 +42,15 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.get("/api/config/device_registry/list")
+            response: dict[str, Any] = await client.get(
+                "/api/config/device_registry/list"
+            )
 
-        return response.get("devices", response) if isinstance(response, dict) else response
+        return (
+            response.get("devices", response)
+            if isinstance(response, dict)
+            else response
+        )
 
     @mcp.tool()
     async def list_config_entries() -> list[dict[str, Any]]:
@@ -85,4 +91,6 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            return await client.post(f"/api/config/config_entries/entry/{entry_id}/reload")
+            return await client.post(
+                f"/api/config/config_entries/entry/{entry_id}/reload"
+            )

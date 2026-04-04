@@ -27,8 +27,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         List all automations defined in Home Assistant.
 
         Returns:
-            List of automation state objects. Each has ``entity_id``, ``state``
-            (``on``/``off``), and ``attributes`` with ``friendly_name`` and ``last_triggered``.
+            List of automation state objects. Each has ``entity_id``,
+            ``state`` (``on``/``off``), and ``attributes`` with
+            ``friendly_name`` and ``last_triggered``.
         """
 
         async with client:
@@ -110,7 +111,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         List all scripts defined in Home Assistant.
 
         Returns:
-            List of script state objects with ``entity_id``, ``state``, and ``attributes``.
+            List of script state objects with ``entity_id``, ``state``,
+            and ``attributes``.
         """
 
         async with client:

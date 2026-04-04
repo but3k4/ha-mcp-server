@@ -1,7 +1,8 @@
 """
 MCP tools for Home Assistant Supervisor add-on management.
 
-These tools require a Supervisor-enabled installation (e.g. Home Assistant OS or Supervised).
+These tools require a Supervisor-enabled installation
+(e.g. Home Assistant OS or Supervised).
 They use the Supervisor API at ``/api/hassio/``.
 """
 
@@ -28,7 +29,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
 
     @mcp.tool()
     async def list_addons() -> list[dict[str, Any]]:
-        """List all available and installed Home Assistant add-ons.
+        """
+        List all available and installed Home Assistant add-ons.
 
         Requires a Supervisor-enabled installation (HA OS or Supervised).
         Raises ``HomeAssistantError`` on HA Container or Core. Use
@@ -56,10 +58,12 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         to change configuration.
 
         Args:
-            addon_slug: Add-on slug identifier, e.g. ``core_mosquitto`` or ``a0d7b954_vscode``.
+            addon_slug: Add-on slug identifier, e.g. ``core_mosquitto``
+                or ``a0d7b954_vscode``.
 
         Returns:
-            Detailed add-on info including version, state, options, ports, and ingress config.
+            Detailed add-on info including version, state, options,
+            ports, and ingress config.
         """
 
         async with client:
@@ -255,11 +259,14 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Raises ``HomeAssistantError`` on HA Container or Core.
 
         Returns:
-            List of repository objects with ``slug``, ``name``, ``source``, and ``maintainer``.
+            List of repository objects with ``slug``, ``name``,
+            ``source``, and ``maintainer``.
         """
 
         async with client:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/store/repositories")
+            response: dict[str, Any] = await client.get(
+                f"{_SUPERVISOR_PREFIX}/store/repositories"
+            )
 
         return response.get("data", {}).get("repositories", [])
 

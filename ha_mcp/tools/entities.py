@@ -53,7 +53,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             domain: Optional domain filter, e.g. ``light``, ``switch``, ``sensor``.
 
         Returns:
-            A list of entity state objects with ``entity_id``, ``state``, and ``attributes``.
+            A list of entity state objects with ``entity_id``, ``state``,
+            and ``attributes``.
         """
 
         async with client:
@@ -76,7 +77,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             entity_id: Full entity ID, e.g. ``light.living_room``.
 
         Returns:
-            Entity state object with ``entity_id``, ``state``, ``attributes``, and timestamps.
+            Entity state object with ``entity_id``, ``state``,
+            ``attributes``, and timestamps.
         """
 
         async with client:
@@ -120,7 +122,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         service_data: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Call a Home Assistant service. This is the primary way to control physical devices.
+        Call a Home Assistant service. This is the primary way to control
+        physical devices.
 
         Services are the correct mechanism for turning devices on/off, adjusting
         brightness, setting thermostat temperatures, running scripts, triggering
@@ -146,7 +149,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     @mcp.tool()
     async def search_entities(query: str) -> list[dict[str, Any]]:
         """
-        Search for entities by matching a query string against entity ID, friendly name, and state.
+        Search for entities by matching a query string against entity ID,
+        friendly name, and state.
 
         The match is case-insensitive and checks all three fields. An entity is
         included if the query appears in any one of them. Entities that have no
@@ -170,7 +174,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             friendly_name: str = entity.get("attributes", {}).get("friendly_name", "")
             state: str = entity.get("state", "")
 
-            if any(query_lower in field.lower() for field in [entity_id, friendly_name, state]):
+            if any(
+                query_lower in field.lower()
+                for field in [entity_id, friendly_name, state]
+            ):
                 results.append(entity)
 
         return results
@@ -206,7 +213,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         template = (
             "{%- set ns = namespace(areas=[]) -%}"
             "{%- for area_id in areas() -%}"
-            "{%- set ns.areas = ns.areas + [{'area_id': area_id, 'name': area_name(area_id)}] -%}"
+            "{%- set ns.areas = ns.areas"
+            " + [{'area_id': area_id, 'name': area_name(area_id)}] -%}"
             "{%- endfor -%}"
             "{{ ns.areas | tojson }}"
         )
@@ -237,7 +245,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            area_result = await client.post("/api/template", {"template": _AREA_ENTITIES_TEMPLATE})
+            area_result = await client.post(
+                "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
+            )
 
         async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
@@ -264,7 +274,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     @mcp.tool()
     async def list_entity_registry() -> list[dict[str, Any]]:
         """
-        List entities that are assigned to an area, with friendly names and current state.
+        List entities that are assigned to an area, with friendly names
+        and current state.
 
         Unlike ``list_devices``, this tool returns **only** entities that have an
         area assignment, which is useful for queries scoped to a room or zone. Friendly
@@ -277,7 +288,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            area_result = await client.post("/api/template", {"template": _AREA_ENTITIES_TEMPLATE})
+            area_result = await client.post(
+                "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
+            )
 
         async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
@@ -317,7 +330,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
 
         Args:
             entity_id: Full entity ID, e.g. ``sensor.temperature``.
-            start_time: ISO 8601 timestamp for the start of the range, e.g. ``2024-01-01T00:00:00``.
+            start_time: ISO 8601 timestamp for the start of the range,
+                e.g. ``2024-01-01T00:00:00``.
             end_time: ISO 8601 timestamp for the end of the range.
 
         Returns:
@@ -382,7 +396,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         exposed by other tools.
 
         Args:
-            template: A Jinja2 template string, e.g. ``{{ states('sensor.temperature') }}``.
+            template: A Jinja2 template string,
+                e.g. ``{{ states('sensor.temperature') }}``.
 
         Returns:
             The rendered string result.

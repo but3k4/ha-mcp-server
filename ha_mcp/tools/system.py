@@ -79,7 +79,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/supervisor/info")
+            response: dict[str, Any] = await client.get(
+                f"{_SUPERVISOR_PREFIX}/supervisor/info"
+            )
 
         return response.get("data", response)
 
@@ -98,7 +100,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/core/info")
+            response: dict[str, Any] = await client.get(
+                f"{_SUPERVISOR_PREFIX}/core/info"
+            )
 
         return response.get("data", response)
 
@@ -115,7 +119,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/host/info")
+            response: dict[str, Any] = await client.get(
+                f"{_SUPERVISOR_PREFIX}/host/info"
+            )
 
         return response.get("data", response)
 
@@ -152,7 +158,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.post(f"{_SUPERVISOR_PREFIX}/core/update")
+            response: dict[str, Any] = await client.post(
+                f"{_SUPERVISOR_PREFIX}/core/update"
+            )
 
         return response.get("result", str(response))
 
@@ -170,7 +178,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.post(f"{_SUPERVISOR_PREFIX}/supervisor/update")
+            response: dict[str, Any] = await client.post(
+                f"{_SUPERVISOR_PREFIX}/supervisor/update"
+            )
 
         return response.get("result", str(response))
 
@@ -188,7 +198,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.post(f"{_SUPERVISOR_PREFIX}/os/update")
+            response: dict[str, Any] = await client.post(
+                f"{_SUPERVISOR_PREFIX}/os/update"
+            )
 
         return response.get("result", str(response))
 
@@ -198,7 +210,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         List all installed Home Assistant integrations.
 
         Returns:
-            List of integration config entries with ``domain``, ``title``, and ``state``.
+            List of integration config entries with ``domain``,
+            ``title``, and ``state``.
         """
 
         async with client:
@@ -221,7 +234,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            result = await client.post(f"/api/config/config_entries/entry/{entry_id}/reload")
+            result = await client.post(
+                f"/api/config/config_entries/entry/{entry_id}/reload"
+            )
 
         return str(result)
 
@@ -259,7 +274,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            response: dict[str, Any] = await client.post(f"{_SUPERVISOR_PREFIX}/backups/new/full")
+            response: dict[str, Any] = await client.post(
+                f"{_SUPERVISOR_PREFIX}/backups/new/full"
+            )
 
         return response.get("data", response)
 
@@ -269,7 +286,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         List all available Home Assistant backups.
 
         Returns:
-            List of backup objects with ``slug``, ``name``, ``date``, ``size``, and ``type``.
+            List of backup objects with ``slug``, ``name``, ``date``,
+            ``size``, and ``type``.
         """
 
         async with client:

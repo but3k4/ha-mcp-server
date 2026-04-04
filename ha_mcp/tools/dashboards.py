@@ -27,7 +27,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         List all Lovelace dashboards configured in Home Assistant.
 
         Returns:
-            List of dashboard config objects including ``url_path``, ``title``, and ``mode``.
+            List of dashboard config objects including ``url_path``,
+            ``title``, and ``mode``.
         """
 
         async with client:
@@ -95,7 +96,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
 
         Args:
             config: Complete dashboard config dict, must include ``views``.
-            url_path: Dashboard URL path to update. ``None`` targets the default dashboard.
+            url_path: Dashboard URL path to update. ``None`` targets
+                the default dashboard.
 
         Returns:
             Confirmation string from HA.

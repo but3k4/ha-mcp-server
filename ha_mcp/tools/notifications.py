@@ -65,11 +65,12 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Args:
             message: Notification body text.
             title: Optional notification title.
-            service: Notify service name, e.g. ``"notify"`` or ``"mobile_app_my_phone"``.
+            service: Notify service name, e.g. ``"notify"`` or
+                ``"mobile_app_my_phone"``.
             target: Optional list of targets (device IDs, group names) supported
                 by the chosen service.
             data: Optional service-specific extra payload. For iOS/Android mobile
-                push use ``{"push": {"sound": "default"}}``; for other services
+                push use ``{"push": {"sound": "default"}}``. For other services
                 consult the integration docs for supported keys.
 
         Returns:
@@ -104,7 +105,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
 
-        return [s for s in states if s["entity_id"].startswith("persistent_notification.")]
+        return [
+            s for s in states if s["entity_id"].startswith("persistent_notification.")
+        ]
 
     @mcp.tool()
     async def create_persistent_notification(
@@ -136,10 +139,14 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             payload["notification_id"] = notification_id
 
         async with client:
-            return await client.post("/api/services/persistent_notification/create", payload)
+            return await client.post(
+                "/api/services/persistent_notification/create", payload
+            )
 
     @mcp.tool()
-    async def dismiss_persistent_notification(notification_id: str) -> list[dict[str, Any]]:
+    async def dismiss_persistent_notification(
+        notification_id: str,
+    ) -> list[dict[str, Any]]:
         """
         Dismiss a persistent notification from the Home Assistant UI.
 

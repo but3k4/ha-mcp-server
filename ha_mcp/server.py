@@ -37,7 +37,8 @@ def _load_client() -> HomeAssistantClient:
     Load HA connection settings from the environment and return a configured client.
 
     Returns:
-        A HomeAssistantClient ready for use. Call it as a context manager to open the connection.
+        A HomeAssistantClient ready for use. Call it as a context manager
+        to open the connection.
 
     Raises:
         ValueError: If ``HA_URL`` or ``HA_TOKEN`` are not set in the environment.
@@ -69,13 +70,16 @@ def create_server() -> FastMCP:
         name="home-assistant",
         instructions=(
             "You are connected to a Home Assistant instance. "
-            "You can control smart home devices, manage automations, dashboards, add-ons, "
-            "view logs, check system health, send notifications, manage input helpers and timers, "
+            "You can control smart home devices, manage automations, "
+            "dashboards, add-ons, view logs, check system health, "
+            "send notifications, manage input helpers and timers, "
             "and inspect the device and integration registries. "
             "Use call_service for controlling physical devices. "
             "Use set_entity_state only for virtual/input entities. "
-            "Use the dedicated set_input_* tools for input helpers instead of call_service. "
-            "Supervisor tools (add-ons, updates, backups) require HA OS or Supervised installation."
+            "Use the dedicated set_input_* tools for input helpers "
+            "instead of call_service. "
+            "Supervisor tools (add-ons, updates, backups) require "
+            "HA OS or Supervised installation."
         ),
     )
 
@@ -93,7 +97,9 @@ def create_server() -> FastMCP:
 
 
 def main() -> None:
-    """Run the Home Assistant MCP server via stdio transport."""
+    """
+    Run the Home Assistant MCP server via stdio transport.
+    """
 
     server = create_server()
     server.run(transport="stdio")

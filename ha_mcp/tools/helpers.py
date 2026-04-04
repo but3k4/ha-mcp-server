@@ -68,7 +68,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
 
         Args:
             entity_id: Input boolean entity ID, e.g. ``input_boolean.vacation_mode``.
-            state: Target state — must be ``"on"`` or ``"off"``.
+            state: Target state. Must be ``"on"`` or ``"off"``.
 
         Returns:
             List of affected entity states.
@@ -194,10 +194,14 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             payload["datetime"] = datetime_str
 
         async with client:
-            return await client.post("/api/services/input_datetime/set_datetime", payload)
+            return await client.post(
+                "/api/services/input_datetime/set_datetime", payload
+            )
 
     @mcp.tool()
-    async def start_timer(entity_id: str, duration: str | None = None) -> list[dict[str, Any]]:
+    async def start_timer(
+        entity_id: str, duration: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Start or restart a ``timer`` entity.
 
@@ -235,7 +239,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            return await client.post("/api/services/timer/pause", {"entity_id": entity_id})
+            return await client.post(
+                "/api/services/timer/pause", {"entity_id": entity_id}
+            )
 
     @mcp.tool()
     async def cancel_timer(entity_id: str) -> list[dict[str, Any]]:
@@ -253,4 +259,6 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
 
         async with client:
-            return await client.post("/api/services/timer/cancel", {"entity_id": entity_id})
+            return await client.post(
+                "/api/services/timer/cancel", {"entity_id": entity_id}
+            )

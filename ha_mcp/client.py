@@ -34,7 +34,9 @@ async def _parse_response(response: aiohttp.ClientResponse) -> Any:
 
     if response.status >= 400:
         body = await response.text()
-        raise HomeAssistantError(f"HA API error {response.status} for {response.url}: {body}")
+        raise HomeAssistantError(
+            f"HA API error {response.status} for {response.url}: {body}"
+        )
 
     content_type = response.headers.get("Content-Type", "")
 
@@ -53,7 +55,9 @@ class HomeAssistantClient:
         token: Long-lived access token generated in HA profile settings.
 
     Example:
-        >>> async with HomeAssistantClient("http://localhost:8123", "mytoken") as client:
+        >>> async with HomeAssistantClient(
+        ...     "http://localhost:8123", "mytoken"
+        ... ) as client:
         ...     states = await client.get("/api/states")
     """
 
@@ -63,7 +67,9 @@ class HomeAssistantClient:
         self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> HomeAssistantClient:
-        """Open the underlying aiohttp session."""
+        """
+        Open the underlying aiohttp session.
+        """
 
         self._session = aiohttp.ClientSession(
             headers={
@@ -75,7 +81,9 @@ class HomeAssistantClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        """Close the underlying aiohttp session."""
+        """
+        Close the underlying aiohttp session.
+        """
 
         if self._session:
             await self._session.close()
@@ -93,7 +101,9 @@ class HomeAssistantClient:
         """
 
         if self._session is None:
-            raise RuntimeError("HomeAssistantClient must be used as an async context manager.")
+            raise RuntimeError(
+                "HomeAssistantClient must be used as an async context manager."
+            )
 
         return self._session
 
@@ -119,7 +129,8 @@ class HomeAssistantClient:
             return await _parse_response(response)
 
     async def post(self, path: str, payload: dict[str, Any] | None = None) -> Any:
-        """Perform a POST request against the HA API.
+        """
+        Perform a POST request against the HA API.
 
         Args:
             path: API path, e.g. ``/api/services/light/turn_on``.
