@@ -97,9 +97,7 @@ def create_server() -> FastMCP:
 
 
 def main() -> None:
-    """
-    Run the Home Assistant MCP server via stdio transport.
-    """
+    """Run the Home Assistant MCP server via stdio transport."""
 
     server = create_server()
     server.run(transport="stdio")

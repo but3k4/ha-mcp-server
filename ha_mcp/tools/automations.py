@@ -1,6 +1,4 @@
-"""
-MCP tools for Home Assistant automation and script management.
-"""
+"""MCP tools for Home Assistant automation and script management."""
 
 from __future__ import annotations
 

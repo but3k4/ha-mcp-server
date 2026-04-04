@@ -1,6 +1,4 @@
-"""
-MCP tools for Home Assistant entity and service management.
-"""
+"""MCP tools for Home Assistant entity and service management."""
 
 from __future__ import annotations
 
@@ -122,10 +120,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         service_data: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Call a Home Assistant service. This is the primary way to control
-        physical devices.
+        Call a Home Assistant service.
 
-        Services are the correct mechanism for turning devices on/off, adjusting
+        This is the primary way to control physical devices. Services are the
+        correct mechanism for turning devices on/off, adjusting
         brightness, setting thermostat temperatures, running scripts, triggering
         automations, and so on. Use ``list_services`` to discover available
         domain/service combinations and their accepted parameters.
@@ -149,8 +147,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     @mcp.tool()
     async def search_entities(query: str) -> list[dict[str, Any]]:
         """
-        Search for entities by matching a query string against entity ID,
-        friendly name, and state.
+        Search for entities by ID, friendly name, or state.
 
         The match is case-insensitive and checks all three fields. An entity is
         included if the query appears in any one of them. Entities that have no
@@ -274,8 +271,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
     @mcp.tool()
     async def list_entity_registry() -> list[dict[str, Any]]:
         """
-        List entities that are assigned to an area, with friendly names
-        and current state.
+        List area-assigned entities with friendly names and current state.
 
         Unlike ``list_devices``, this tool returns **only** entities that have an
         area assignment, which is useful for queries scoped to a room or zone. Friendly

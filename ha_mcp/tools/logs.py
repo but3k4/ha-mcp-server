@@ -1,6 +1,4 @@
-"""
-MCP tools for accessing Home Assistant system and component logs.
-"""
+"""MCP tools for accessing Home Assistant system and component logs."""
 
 from __future__ import annotations
 

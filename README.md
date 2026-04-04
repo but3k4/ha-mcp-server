@@ -29,6 +29,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
   - [Device & Integration Registry](#device--integration-registry)
 - [Notes on Supervisor Tools](#notes-on-supervisor-tools)
 - [Development](#development)
+- [License](#license)
 
 ---
 
@@ -498,3 +499,9 @@ uv run mypy .
 ```
 
 > All function signatures must have type hints. Do not commit code with mypy errors.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

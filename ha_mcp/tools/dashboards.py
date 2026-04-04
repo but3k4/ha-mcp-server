@@ -1,6 +1,4 @@
-"""
-MCP tools for Home Assistant Lovelace dashboard management.
-"""
+"""MCP tools for Home Assistant Lovelace dashboard management."""
 
 from __future__ import annotations
 

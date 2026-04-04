@@ -1,6 +1,4 @@
-"""
-MCP tools for Home Assistant notifications and persistent messages.
-"""
+"""MCP tools for Home Assistant notifications and persistent messages."""
 
 from __future__ import annotations
 

@@ -21,33 +21,43 @@ _STATES: list[dict[str, Any]] = [
 
 @pytest.fixture
 def tools(mock_client: MagicMock) -> dict[str, Any]:
+    """Register automation tools against a mock client and return the tool dict."""
+
     capture = ToolCapture()
     automations.register(capture, mock_client)  # type: ignore[arg-type]
     return capture.tools
 
 
-# --- list_automations ---
-
-
 async def test_list_automations_filters_domain(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    list_automations returns only entities whose entity_id starts with 'automation.'.
+    """
+
     mock_client.get.return_value = _STATES
     result = await tools["list_automations"]()
     assert len(result) == 2
     assert all(e["entity_id"].startswith("automation.") for e in result)
 
 
-async def test_list_automations_empty(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_list_automations_empty(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    list_automations returns an empty list when no automation entities are present.
+    """
+
     mock_client.get.return_value = [{"entity_id": "light.kitchen", "state": "on"}]
     result = await tools["list_automations"]()
     assert result == []
 
 
-# --- trigger / enable / disable automation ---
+async def test_trigger_automation(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """trigger_automation calls the automation/trigger service with the entity_id."""
 
-
-async def test_trigger_automation(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.post.return_value = []
     await tools["trigger_automation"]("automation.morning_lights")
     mock_client.post.assert_called_once_with(
@@ -57,6 +67,8 @@ async def test_trigger_automation(tools: dict[str, Any], mock_client: MagicMock)
 
 
 async def test_enable_automation(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    """enable_automation calls the automation/turn_on service with the entity_id."""
+
     mock_client.post.return_value = []
     await tools["enable_automation"]("automation.goodnight")
     mock_client.post.assert_called_once_with(
@@ -65,7 +77,11 @@ async def test_enable_automation(tools: dict[str, Any], mock_client: MagicMock) 
     )
 
 
-async def test_disable_automation(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_disable_automation(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """disable_automation calls the automation/turn_off service with the entity_id."""
+
     mock_client.post.return_value = []
     await tools["disable_automation"]("automation.goodnight")
     mock_client.post.assert_called_once_with(
@@ -74,12 +90,13 @@ async def test_disable_automation(tools: dict[str, Any], mock_client: MagicMock)
     )
 
 
-# --- reload_automations ---
-
-
 async def test_reload_automations_returns_count(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    reload_automations returns a string containing the count of reloaded automations.
+    """
+
     mock_client.post.return_value = [{"entity_id": "automation.morning_lights"}]
     result = await tools["reload_automations"]()
     assert "1" in result
@@ -89,25 +106,34 @@ async def test_reload_automations_returns_count(
 async def test_reload_automations_empty_result(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    reload_automations returns a string containing '0' when the reload response
+    is empty.
+    """
+
     mock_client.post.return_value = []
     result = await tools["reload_automations"]()
     assert "0" in result
 
 
-# --- list_scripts ---
+async def test_list_scripts_filters_domain(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """list_scripts returns only entities whose entity_id starts with 'script.'."""
 
-
-async def test_list_scripts_filters_domain(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.get.return_value = _STATES
     result = await tools["list_scripts"]()
     assert len(result) == 1
     assert result[0]["entity_id"] == "script.goodnight"
 
 
-# --- run_script ---
+async def test_run_script_without_variables(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    run_script calls script/turn_on with entity_id only when no variables are given.
+    """
 
-
-async def test_run_script_without_variables(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.post.return_value = []
     await tools["run_script"]("script.goodnight")
     mock_client.post.assert_called_once_with(
@@ -116,7 +142,13 @@ async def test_run_script_without_variables(tools: dict[str, Any], mock_client: 
     )
 
 
-async def test_run_script_with_variables(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_run_script_with_variables(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    run_script includes a 'variables' key in the payload when variables are provided.
+    """
+
     mock_client.post.return_value = []
     await tools["run_script"]("script.notify", variables={"message": "hello"})
     mock_client.post.assert_called_once_with(
@@ -125,10 +157,11 @@ async def test_run_script_with_variables(tools: dict[str, Any], mock_client: Mag
     )
 
 
-# --- list_scenes / activate_scene ---
+async def test_list_scenes_filters_domain(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """list_scenes returns only entities whose entity_id starts with 'scene.'."""
 
-
-async def test_list_scenes_filters_domain(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.get.return_value = _STATES
     result = await tools["list_scenes"]()
     assert len(result) == 1
@@ -136,6 +169,8 @@ async def test_list_scenes_filters_domain(tools: dict[str, Any], mock_client: Ma
 
 
 async def test_activate_scene(tools: dict[str, Any], mock_client: MagicMock) -> None:
+    """activate_scene calls the scene/turn_on service with the entity_id."""
+
     mock_client.post.return_value = []
     await tools["activate_scene"]("scene.movie_time")
     mock_client.post.assert_called_once_with(

@@ -10,12 +10,12 @@ import pytest
 from ha_mcp.tools import notifications
 from tests.conftest import ToolCapture
 
-_SERVICES = [
+_SERVICES: list[dict[str, Any]] = [
     {"domain": "notify", "services": {"notify": {}, "mobile_app_my_phone": {}}},
     {"domain": "light", "services": {"turn_on": {}}},
 ]
 
-_STATES = [
+_STATES: list[dict[str, Any]] = [
     {
         "entity_id": "persistent_notification.alert1",
         "state": "notifying",
@@ -27,15 +27,20 @@ _STATES = [
 
 @pytest.fixture
 def tools(mock_client: MagicMock) -> dict[str, Any]:
+    """Register notification tools against a mock client and return the tool dict."""
+
     capture = ToolCapture()
     notifications.register(capture, mock_client)  # type: ignore[arg-type]
     return capture.tools
 
 
-# --- list_notification_services ---
+async def test_list_notification_services(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    list_notification_services returns only service names under the 'notify' domain.
+    """
 
-
-async def test_list_notification_services(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.get.return_value = _SERVICES
     result = await tools["list_notification_services"]()
     assert "notify" in result
@@ -46,15 +51,22 @@ async def test_list_notification_services(tools: dict[str, Any], mock_client: Ma
 async def test_list_notification_services_no_notify_domain(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    list_notification_services returns an empty list when no 'notify' domain is present.
+    """
+
     mock_client.get.return_value = [{"domain": "light", "services": {"turn_on": {}}}]
     result = await tools["list_notification_services"]()
     assert result == []
 
 
-# --- send_notification ---
+async def test_send_notification_minimal(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    send_notification posts to notify/notify with only the message when no extras given.
+    """
 
-
-async def test_send_notification_minimal(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.post.return_value = []
     await tools["send_notification"]("Hello world")
     mock_client.post.assert_called_once_with(
@@ -63,7 +75,14 @@ async def test_send_notification_minimal(tools: dict[str, Any], mock_client: Mag
     )
 
 
-async def test_send_notification_full(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_send_notification_full(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    send_notification posts to the specified service with title, target, and
+    data fields.
+    """
+
     mock_client.post.return_value = []
     await tools["send_notification"](
         "Motion detected",
@@ -83,22 +102,24 @@ async def test_send_notification_full(tools: dict[str, Any], mock_client: MagicM
     )
 
 
-# --- list_persistent_notifications ---
+async def test_list_persistent_notifications(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """list_persistent_notifications returns only persistent_notification.* entities."""
 
-
-async def test_list_persistent_notifications(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.get.return_value = _STATES
     result = await tools["list_persistent_notifications"]()
     assert len(result) == 1
     assert result[0]["entity_id"] == "persistent_notification.alert1"
 
 
-# --- create_persistent_notification ---
-
-
 async def test_create_persistent_notification_minimal(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    create_persistent_notification posts with message only when no title or id given.
+    """
+
     mock_client.post.return_value = []
     await tools["create_persistent_notification"]("Backup complete")
     mock_client.post.assert_called_once_with(
@@ -110,22 +131,31 @@ async def test_create_persistent_notification_minimal(
 async def test_create_persistent_notification_full(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    create_persistent_notification includes title and notification_id when provided.
+    """
+
     mock_client.post.return_value = []
     await tools["create_persistent_notification"](
         "Update ready", title="HA Update", notification_id="ha_update"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/persistent_notification/create",
-        {"message": "Update ready", "title": "HA Update", "notification_id": "ha_update"},
+        {
+            "message": "Update ready",
+            "title": "HA Update",
+            "notification_id": "ha_update",
+        },
     )
-
-
-# --- dismiss_persistent_notification ---
 
 
 async def test_dismiss_persistent_notification(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    dismiss_persistent_notification calls the dismiss service with the notification_id.
+    """
+
     mock_client.post.return_value = []
     await tools["dismiss_persistent_notification"]("ha_update")
     mock_client.post.assert_called_once_with(

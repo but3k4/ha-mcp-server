@@ -67,9 +67,7 @@ class HomeAssistantClient:
         self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> HomeAssistantClient:
-        """
-        Open the underlying aiohttp session.
-        """
+        """Open the underlying aiohttp session."""
 
         self._session = aiohttp.ClientSession(
             headers={
@@ -81,9 +79,7 @@ class HomeAssistantClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        """
-        Close the underlying aiohttp session.
-        """
+        """Close the underlying aiohttp session."""
 
         if self._session:
             await self._session.close()

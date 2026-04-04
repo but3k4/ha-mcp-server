@@ -1,6 +1,4 @@
-"""
-MCP tools for Home Assistant system information, configuration, and updates.
-"""
+"""MCP tools for Home Assistant system information, configuration, and updates."""
 
 from __future__ import annotations
 

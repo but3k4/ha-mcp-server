@@ -2,6 +2,7 @@
 name = "ha-mcp-server"
 version = "0.0.8"
 description = "MCP server for Home Assistant. Full control over entities, dashboards, add-ons, logs, automations and more"
+license = { file = "LICENSE" }
 authors = [
     { name = "Claudio Borges", email = "but3k4@gmail.com" },
 ]
@@ -45,5 +46,11 @@ branch = true
 source = ["ha_mcp"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "ANN"]
-ignore = ["ANN401"]  # HA API responses are dynamically typed JSON
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "D"]
+ignore = ["ANN401", "D202", "D107", "D212"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D200", "D205"]

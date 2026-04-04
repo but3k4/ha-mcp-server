@@ -10,7 +10,7 @@ import pytest
 from ha_mcp.tools import registry
 from tests.conftest import ToolCapture
 
-_DEVICES = [
+_DEVICES: list[dict[str, Any]] = [
     {
         "id": "abc123",
         "name": "Hue Bridge",
@@ -21,7 +21,7 @@ _DEVICES = [
     }
 ]
 
-_CONFIG_ENTRIES = [
+_CONFIG_ENTRIES: list[dict[str, Any]] = [
     {"entry_id": "entry1", "domain": "hue", "title": "Philips Hue", "state": "loaded"},
     {"entry_id": "entry2", "domain": "cast", "title": "Google Cast", "state": "loaded"},
 ]
@@ -29,17 +29,20 @@ _CONFIG_ENTRIES = [
 
 @pytest.fixture
 def tools(mock_client: MagicMock) -> dict[str, Any]:
+    """Register registry tools against a mock client and return the tool dict."""
+
     capture = ToolCapture()
     registry.register(capture, mock_client)  # type: ignore[arg-type]
     return capture.tools
 
 
-# --- get_device_registry ---
-
-
 async def test_get_device_registry_list_response(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
+    """
+    get_device_registry returns the device list when the API responds with a plain list.
+    """
+
     mock_client.get.return_value = _DEVICES
     result = await tools["get_device_registry"]()
     assert result == _DEVICES
@@ -50,15 +53,20 @@ async def test_get_device_registry_dict_response(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
     """HA may wrap the list in a dict with a 'devices' key."""
+
     mock_client.get.return_value = {"devices": _DEVICES}
     result = await tools["get_device_registry"]()
     assert result == _DEVICES
 
 
-# --- list_config_entries ---
+async def test_list_config_entries(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    list_config_entries returns all config entries from
+    /api/config/config_entries/entry.
+    """
 
-
-async def test_list_config_entries(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.get.return_value = _CONFIG_ENTRIES
     result = await tools["list_config_entries"]()
     assert len(result) == 2
@@ -66,11 +74,16 @@ async def test_list_config_entries(tools: dict[str, Any], mock_client: MagicMock
     mock_client.get.assert_called_once_with("/api/config/config_entries/entry")
 
 
-# --- reload_config_entry ---
+async def test_reload_config_entry(
+    tools: dict[str, Any], mock_client: MagicMock
+) -> None:
+    """
+    reload_config_entry POSTs to the reload endpoint and returns the response dict.
+    """
 
-
-async def test_reload_config_entry(tools: dict[str, Any], mock_client: MagicMock) -> None:
     mock_client.post.return_value = {"require_restart": False}
     result = await tools["reload_config_entry"]("entry1")
     assert result == {"require_restart": False}
-    mock_client.post.assert_called_once_with("/api/config/config_entries/entry/entry1/reload")
+    mock_client.post.assert_called_once_with(
+        "/api/config/config_entries/entry/entry1/reload"
+    )

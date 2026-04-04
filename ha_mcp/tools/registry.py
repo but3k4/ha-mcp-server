@@ -1,6 +1,4 @@
-"""
-MCP tools for the Home Assistant device and config-entry registries.
-"""
+"""MCP tools for the Home Assistant device and config-entry registries."""
 
 from __future__ import annotations
 
