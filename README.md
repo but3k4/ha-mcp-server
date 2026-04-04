@@ -1,6 +1,6 @@
 # Home Assistant MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Home Assistant - control entities, automations, dashboards, add-ons, and system settings from any MCP-compatible LLM client.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Home Assistant. Control entities, automations, dashboards, add-ons, and system settings from any MCP-compatible LLM client.
 
 ![Claude Desktop connected to Home Assistant](docs/screenshot.png)
 
@@ -53,7 +53,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 ## Requirements
 
 - **Python 3.14+**
-- **[uv](https://docs.astral.sh/uv/)** - Python package and environment manager
+- **[uv](https://docs.astral.sh/uv/)**: Python package and environment manager
 - A running **Home Assistant** instance reachable over the network
 - A **long-lived access token** from your HA profile (see below)
 
@@ -252,7 +252,7 @@ Add the server to your Claude Code MCP configuration. The config file location d
 | Current project only | `.claude/claude_desktop_config.json` (in project root) |
 | All projects for your user | `~/.claude/claude_desktop_config.json` |
 
-### Option 1 — Run directly with uv (recommended for local dev)
+### Option 1: Run directly with uv (recommended for local dev)
 
 ```json
 {
@@ -275,7 +275,7 @@ Add the server to your Claude Code MCP configuration. The config file location d
 
 > Alternatively, omit the `env` block and use a `.env` file in the project directory instead.
 
-### Option 2 — Run with Docker
+### Option 2: Run with Docker
 
 ```json
 {
@@ -293,7 +293,7 @@ Add the server to your Claude Code MCP configuration. The config file location d
 }
 ```
 
-### Option 3 — Run with Podman
+### Option 3: Run with Podman
 
 ```json
 {
