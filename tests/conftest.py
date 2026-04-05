@@ -51,4 +51,5 @@ def mock_client() -> MagicMock:
     client.get = AsyncMock()
     client.post = AsyncMock()
     client.delete = AsyncMock()
+    client.ws_command = AsyncMock()
     return client

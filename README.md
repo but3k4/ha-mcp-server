@@ -47,7 +47,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 | Input Helpers & Timers | Set input_boolean, input_number, input_select, input_text, input_datetime, and timer entities |
 | Device & Integration Registry | Browse device hardware info, list config entries, reload integrations |
 
-**77 tools** in total.
+**78 tools** in total.
 
 ---
 
@@ -344,8 +344,9 @@ After editing the config, restart Claude Code or run `/mcp` to reload servers.
 | `list_dashboards` | List all configured Lovelace dashboards |
 | `get_dashboard_config` | Get the full YAML/JSON config for a dashboard |
 | `create_dashboard` | Create a new Lovelace dashboard |
+| `update_dashboard` | Update metadata (title, icon, sidebar visibility) for an existing dashboard |
 | `update_dashboard_config` | Replace the full configuration of a dashboard |
-| `delete_dashboard` | Delete a dashboard by URL path |
+| `delete_dashboard` | Delete a dashboard by its internal ID |
 
 ### Add-ons (Supervisor only)
 

@@ -1,17 +1,23 @@
 """
 Async HTTP client for the Home Assistant REST and Supervisor APIs.
 
-Wraps aiohttp with auth headers and consistent error handling.
+Wraps aiohttp with auth headers and consistent error handling.  Also
+provides :meth:`HomeAssistantClient.ws_command` for one-shot WebSocket
+commands, which is required for APIs (such as Lovelace dashboard
+management) that are not available over REST in YAML-mode installations.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse, urlunparse
 
 import aiohttp
 
 if TYPE_CHECKING:
     from typing import Any
+
+_WEBSOCKET_PATH = "/api/websocket"
 
 
 class HomeAssistantError(Exception):
@@ -144,6 +150,66 @@ class HomeAssistantClient:
 
         async with session.post(url, json=payload or {}) as response:
             return await _parse_response(response)
+
+    async def ws_command(self, msg_type: str, **kwargs: Any) -> Any:
+        """
+        Send a single command over the HA WebSocket API and return its result.
+
+        Opens a fresh WebSocket connection for each call, completes the HA
+        auth handshake, sends one command message, waits for the matching
+        result, then closes the connection.  Unlike the HTTP methods this
+        does *not* require the client to be used as an async context manager.
+
+        Args:
+            msg_type: HA WebSocket command type, e.g. ``lovelace/config``
+                or ``lovelace/dashboards/list``.
+            **kwargs: Additional fields merged into the command message,
+                e.g. ``url_path="my-dash"`` or ``config={...}``.
+
+        Returns:
+            The ``result`` field from the HA response message.  May be
+            ``None`` for commands that return no data (e.g. config/save).
+
+        Raises:
+            HomeAssistantError: If authentication is rejected or the command
+                returns ``success: false``.
+        """
+        parsed = urlparse(self._base_url)
+        scheme = "wss" if parsed.scheme == "https" else "ws"
+        ws_url = urlunparse(
+            parsed._replace(scheme=scheme, path=_WEBSOCKET_PATH, query="", fragment="")
+        )
+
+        async with aiohttp.ClientSession() as session, session.ws_connect(ws_url) as ws:
+                first = await ws.receive_json()
+                if first.get("type") != "auth_required":
+                    raise HomeAssistantError(
+                        f"Expected auth_required, got {first.get('type')!r}"
+                    )
+
+                await ws.send_json({"type": "auth", "access_token": self._token})
+                auth_msg = await ws.receive_json()
+                if auth_msg.get("type") != "auth_ok":
+                    raise HomeAssistantError(
+                        f"WebSocket authentication failed: {auth_msg}"
+                    )
+
+                cmd_id = 1
+                await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
+
+                while True:
+                    msg = await ws.receive_json()
+                    if msg.get("id") == cmd_id:
+                        break
+
+                if not msg.get("success"):
+                    error = msg.get("error", {})
+                    raise HomeAssistantError(
+                        f"WS command {msg_type!r} failed: "
+                        f"{error.get('code')} — {error.get('message')}"
+                    )
+
+                return msg.get("result")
 
     async def delete(self, path: str) -> Any:
         """

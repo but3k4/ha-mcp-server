@@ -2,6 +2,7 @@ __pycache__/
 .claude
 .coverage
 .env
+.mcp.json
 .mypy_cache/
 .ruff_cache/
 .venv/

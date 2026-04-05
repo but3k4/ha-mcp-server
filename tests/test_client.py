@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from aioresponses import aioresponses
 
@@ -128,3 +130,141 @@ async def test_base_url_trailing_slash_stripped() -> None:
         async with HomeAssistantClient(f"{BASE_URL}/", TOKEN) as client:
             await client.get("/api/states")
     # passes without KeyError means the URL matched correctly
+
+
+def _make_ws_mock(receive_side_effect: list[dict]) -> tuple[MagicMock, MagicMock]:
+    """
+    Return (session_mock, ws_mock) wired for use with patch("aiohttp.ClientSession").
+
+    Args:
+        receive_side_effect: Ordered list of dicts returned by ``receive_json``.
+
+    Returns:
+        A tuple of ``(session_mock, ws_mock)`` ready to be used with
+        ``patch("aiohttp.ClientSession", return_value=session_mock)``.
+    """
+    ws = MagicMock()
+    ws.receive_json = AsyncMock(side_effect=receive_side_effect)
+    ws.send_json = AsyncMock()
+    ws.__aenter__ = AsyncMock(return_value=ws)
+    ws.__aexit__ = AsyncMock(return_value=None)
+
+    session = MagicMock()
+    session.ws_connect = MagicMock(return_value=ws)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+
+    return session, ws
+
+
+async def test_ws_command_returns_result() -> None:
+    """ws_command completes the auth handshake and returns the result field."""
+
+    session, ws = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+            {"id": 1, "type": "result", "success": True, "result": {"views": []}},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        result = await client.ws_command("lovelace/config")
+
+    assert result == {"views": []}
+    ws.send_json.assert_any_call({"type": "auth", "access_token": TOKEN})
+    ws.send_json.assert_called_with({"id": 1, "type": "lovelace/config"})
+
+
+async def test_ws_command_with_kwargs() -> None:
+    """ws_command merges extra kwargs into the command message."""
+
+    session, ws = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+            {"id": 1, "type": "result", "success": True, "result": None},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        await client.ws_command("lovelace/config", url_path="kiosk")
+
+    ws.send_json.assert_called_with(
+        {"id": 1, "type": "lovelace/config", "url_path": "kiosk"}
+    )
+
+
+async def test_ws_command_auth_failure_raises() -> None:
+    """ws_command raises HomeAssistantError when HA rejects the auth token."""
+
+    session, _ = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_invalid", "message": "Invalid token"},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        with pytest.raises(HomeAssistantError, match="authentication failed"):
+            await client.ws_command("lovelace/config")
+
+
+async def test_ws_command_error_result_raises() -> None:
+    """ws_command raises HomeAssistantError when the command returns success=false."""
+
+    session, _ = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+            {
+                "id": 1,
+                "type": "result",
+                "success": False,
+                "error": {"code": "not_found", "message": "Dashboard not found"},
+            },
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        with pytest.raises(HomeAssistantError, match="not_found"):
+            await client.ws_command("lovelace/config", url_path="missing")
+
+
+async def test_ws_command_unexpected_first_message_raises() -> None:
+    """
+    ws_command raises HomeAssistantError if the first WS message is not auth_required.
+    """
+
+    session, _ = _make_ws_mock(
+        [
+            {"type": "something_unexpected"},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        with pytest.raises(HomeAssistantError, match="Expected auth_required"):
+            await client.ws_command("lovelace/config")
+
+
+async def test_ws_command_uses_wss_for_https() -> None:
+    """ws_command derives wss:// when the base URL uses https://."""
+
+    session, _ = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+            {"id": 1, "type": "result", "success": True, "result": None},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient("https://ha.local:8123", TOKEN)
+        await client.ws_command("lovelace/config")
+
+    session.ws_connect.assert_called_once_with("wss://ha.local:8123/api/websocket")
