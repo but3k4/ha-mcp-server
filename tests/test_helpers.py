@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -37,9 +39,7 @@ def tools(mock_client: MagicMock) -> dict[str, Any]:
 async def test_list_input_helpers_all(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_input_helpers returns all input_* and timer entities, excluding other domains.
-    """
+    """list_input_helpers returns all input_* and timer entities, excluding other domains."""
 
     mock_client.get.return_value = _STATES
     result = await tools["list_input_helpers"]()
@@ -52,9 +52,7 @@ async def test_list_input_helpers_all(
 async def test_list_input_helpers_domain_filter(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_input_helpers filters to a single domain when the domain argument is given.
-    """
+    """list_input_helpers filters to a single domain when the domain argument is given."""
 
     mock_client.get.return_value = _STATES
     result = await tools["list_input_helpers"](domain="input_boolean")
@@ -160,9 +158,7 @@ async def test_set_input_datetime_time_only(
 async def test_set_input_datetime_full(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    set_input_datetime sends date and datetime fields when all arguments are provided.
-    """
+    """set_input_datetime sends date and datetime fields when all arguments are provided."""
 
     mock_client.post.return_value = []
     await tools["set_input_datetime"](

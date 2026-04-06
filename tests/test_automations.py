@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -31,9 +33,7 @@ def tools(mock_client: MagicMock) -> dict[str, Any]:
 async def test_list_automations_filters_domain(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_automations returns only entities whose entity_id starts with 'automation.'.
-    """
+    """list_automations returns only entities whose entity_id starts with 'automation.'."""
 
     mock_client.get.return_value = _STATES
     result = await tools["list_automations"]()
@@ -44,9 +44,7 @@ async def test_list_automations_filters_domain(
 async def test_list_automations_empty(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_automations returns an empty list when no automation entities are present.
-    """
+    """list_automations returns an empty list when no automation entities are present."""
 
     mock_client.get.return_value = [{"entity_id": "light.kitchen", "state": "on"}]
     result = await tools["list_automations"]()
@@ -93,9 +91,7 @@ async def test_disable_automation(
 async def test_reload_automations_returns_count(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    reload_automations returns a string containing the count of reloaded automations.
-    """
+    """reload_automations returns a string containing the count of reloaded automations."""
 
     mock_client.post.return_value = [{"entity_id": "automation.morning_lights"}]
     result = await tools["reload_automations"]()
@@ -130,9 +126,7 @@ async def test_list_scripts_filters_domain(
 async def test_run_script_without_variables(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    run_script calls script/turn_on with entity_id only when no variables are given.
-    """
+    """run_script calls script/turn_on with entity_id only when no variables are given."""
 
     mock_client.post.return_value = []
     await tools["run_script"]("script.goodnight")
@@ -145,9 +139,7 @@ async def test_run_script_without_variables(
 async def test_run_script_with_variables(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    run_script includes a 'variables' key in the payload when variables are provided.
-    """
+    """run_script includes a 'variables' key in the payload when variables are provided."""
 
     mock_client.post.return_value = []
     await tools["run_script"]("script.notify", variables={"message": "hello"})

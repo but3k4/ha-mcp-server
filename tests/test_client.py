@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from aioresponses import aioresponses
+import pytest
 
 from ha_mcp.client import HomeAssistantClient, HomeAssistantError
 
@@ -94,7 +94,7 @@ async def test_post_sends_auth_header() -> None:
             await client.post("/api/services/light/turn_on")
 
     # aioresponses captures the request. Verify it was sent to the right URL
-    request = list(m.requests.values())[0][0]
+    request = next(iter(m.requests.values()))[0]
     assert request.kwargs["headers"]["Authorization"] == f"Bearer {TOKEN}"
 
 
@@ -112,9 +112,7 @@ async def test_delete_returns_json() -> None:
 
 
 async def test_require_session_raises_outside_context() -> None:
-    """
-    _require_session raises RuntimeError when called outside an async context manager.
-    """
+    """_require_session raises RuntimeError when called outside an async context manager."""
 
     client = HomeAssistantClient(BASE_URL, TOKEN)
     with pytest.raises(RuntimeError, match="context manager"):
@@ -236,9 +234,7 @@ async def test_ws_command_error_result_raises() -> None:
 
 
 async def test_ws_command_unexpected_first_message_raises() -> None:
-    """
-    ws_command raises HomeAssistantError if the first WS message is not auth_required.
-    """
+    """ws_command raises HomeAssistantError if the first WS message is not auth_required."""
 
     session, _ = _make_ws_mock(
         [

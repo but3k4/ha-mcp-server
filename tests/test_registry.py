@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -39,9 +41,7 @@ def tools(mock_client: MagicMock) -> dict[str, Any]:
 async def test_get_device_registry_list_response(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    get_device_registry returns the device list when the API responds with a plain list.
-    """
+    """get_device_registry returns the device list when the API responds with a plain list."""
 
     mock_client.get.return_value = _DEVICES
     result = await tools["get_device_registry"]()
@@ -77,9 +77,7 @@ async def test_list_config_entries(
 async def test_reload_config_entry(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    reload_config_entry POSTs to the reload endpoint and returns the response dict.
-    """
+    """reload_config_entry POSTs to the reload endpoint and returns the response dict."""
 
     mock_client.post.return_value = {"require_restart": False}
     result = await tools["reload_config_entry"]("entry1")

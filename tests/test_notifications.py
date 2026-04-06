@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -37,9 +39,7 @@ def tools(mock_client: MagicMock) -> dict[str, Any]:
 async def test_list_notification_services(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_notification_services returns only service names under the 'notify' domain.
-    """
+    """list_notification_services returns only service names under the 'notify' domain."""
 
     mock_client.get.return_value = _SERVICES
     result = await tools["list_notification_services"]()
@@ -51,9 +51,7 @@ async def test_list_notification_services(
 async def test_list_notification_services_no_notify_domain(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_notification_services returns an empty list when no 'notify' domain is present.
-    """
+    """list_notification_services returns an empty list when no 'notify' domain is present."""
 
     mock_client.get.return_value = [{"domain": "light", "services": {"turn_on": {}}}]
     result = await tools["list_notification_services"]()
@@ -63,9 +61,7 @@ async def test_list_notification_services_no_notify_domain(
 async def test_send_notification_minimal(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    send_notification posts to notify/notify with only the message when no extras given.
-    """
+    """send_notification posts to notify/notify with only the message when no extras given."""
 
     mock_client.post.return_value = []
     await tools["send_notification"]("Hello world")
@@ -116,9 +112,7 @@ async def test_list_persistent_notifications(
 async def test_create_persistent_notification_minimal(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    create_persistent_notification posts with message only when no title or id given.
-    """
+    """create_persistent_notification posts with message only when no title or id given."""
 
     mock_client.post.return_value = []
     await tools["create_persistent_notification"]("Backup complete")
@@ -131,9 +125,7 @@ async def test_create_persistent_notification_minimal(
 async def test_create_persistent_notification_full(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    create_persistent_notification includes title and notification_id when provided.
-    """
+    """create_persistent_notification includes title and notification_id when provided."""
 
     mock_client.post.return_value = []
     await tools["create_persistent_notification"](
@@ -152,9 +144,7 @@ async def test_create_persistent_notification_full(
 async def test_dismiss_persistent_notification(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    dismiss_persistent_notification calls the dismiss service with the notification_id.
-    """
+    """dismiss_persistent_notification calls the dismiss service with the notification_id."""
 
     mock_client.post.return_value = []
     await tools["dismiss_persistent_notification"]("ha_update")

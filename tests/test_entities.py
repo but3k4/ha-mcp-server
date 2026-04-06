@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -40,9 +42,7 @@ def tools(mock_client: MagicMock) -> dict[str, Any]:
 
 
 async def test_list_entities_all(tools: dict[str, Any], mock_client: MagicMock) -> None:
-    """
-    list_entities returns all states from /api/states when no domain filter is given.
-    """
+    """list_entities returns all states from /api/states when no domain filter is given."""
 
     mock_client.get.return_value = _STATES
     result = await tools["list_entities"]()
@@ -53,9 +53,7 @@ async def test_list_entities_all(tools: dict[str, Any], mock_client: MagicMock) 
 async def test_list_entities_domain_filter(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_entities filters results to only entities matching the given domain prefix.
-    """
+    """list_entities filters results to only entities matching the given domain prefix."""
 
     mock_client.get.return_value = _STATES
     result = await tools["list_entities"](domain="light")
@@ -74,9 +72,7 @@ async def test_list_entities_no_match(
 
 
 async def test_get_entity(tools: dict[str, Any], mock_client: MagicMock) -> None:
-    """
-    get_entity fetches a single entity state by entity_id from /api/states/{entity_id}.
-    """
+    """get_entity fetches a single entity state by entity_id from /api/states/{entity_id}."""
 
     mock_client.get.return_value = _STATES[0]
     result = await tools["get_entity"]("light.kitchen")
@@ -350,9 +346,7 @@ async def test_get_entity_history_with_end(
 async def test_get_logbook_no_filters(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    get_logbook fetches /api/logbook with no params when no arguments are provided.
-    """
+    """get_logbook fetches /api/logbook with no params when no arguments are provided."""
 
     entries = [{"name": "Kitchen Light", "message": "turned on"}]
     mock_client.get.return_value = entries

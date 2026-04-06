@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -193,9 +195,7 @@ async def test_list_addon_repositories(
 async def test_list_addon_repositories_empty(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    list_addon_repositories returns an empty list when no repositories are configured.
-    """
+    """list_addon_repositories returns an empty list when no repositories are configured."""
 
     mock_client.get.return_value = {"data": {"repositories": []}}
     result = await tools["list_addon_repositories"]()

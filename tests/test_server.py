@@ -4,17 +4,15 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from mcp.server.fastmcp import FastMCP
+import pytest
 
 from ha_mcp.client import HomeAssistantClient
 from ha_mcp.server import _load_client, create_server, main
 
 
 def test_load_client_missing_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    """
-    _load_client raises ValueError when the HA_URL environment variable is not set.
-    """
+    """_load_client raises ValueError when the HA_URL environment variable is not set."""
 
     monkeypatch.delenv("HA_URL", raising=False)
     monkeypatch.delenv("HA_TOKEN", raising=False)
@@ -23,9 +21,7 @@ def test_load_client_missing_url(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_load_client_missing_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    """
-    _load_client raises ValueError when the HA_TOKEN environment variable is not set.
-    """
+    """_load_client raises ValueError when the HA_TOKEN environment variable is not set."""
 
     monkeypatch.setenv("HA_URL", "http://ha.local:8123")
     monkeypatch.delenv("HA_TOKEN", raising=False)

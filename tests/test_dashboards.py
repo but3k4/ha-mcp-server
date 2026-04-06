@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -40,9 +42,7 @@ async def test_list_dashboards(tools: dict[str, Any], mock_client: MagicMock) ->
 async def test_get_dashboard_config_default(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    get_dashboard_config fetches the default dashboard when url_path is None.
-    """
+    """get_dashboard_config fetches the default dashboard when url_path is None."""
 
     mock_client.ws_command.return_value = _CONFIG
     result = await tools["get_dashboard_config"]()
@@ -53,9 +53,7 @@ async def test_get_dashboard_config_default(
 async def test_get_dashboard_config_named(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    get_dashboard_config passes url_path for non-default dashboards.
-    """
+    """get_dashboard_config passes url_path for non-default dashboards."""
 
     mock_client.ws_command.return_value = _CONFIG
     await tools["get_dashboard_config"](url_path="kiosk")
@@ -131,9 +129,7 @@ async def test_update_dashboard_config_default(
 async def test_update_dashboard_config_named(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    update_dashboard_config includes url_path for named dashboards.
-    """
+    """update_dashboard_config includes url_path for named dashboards."""
 
     mock_client.ws_command.return_value = None
     await tools["update_dashboard_config"](_CONFIG, url_path="kiosk")
@@ -178,9 +174,7 @@ async def test_update_dashboard(tools: dict[str, Any], mock_client: MagicMock) -
 async def test_update_dashboard_multiple_fields(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    update_dashboard passes only the non-None kwargs to ws_command.
-    """
+    """update_dashboard passes only the non-None kwargs to ws_command."""
 
     mock_client.ws_command.return_value = None
     await tools["update_dashboard"](

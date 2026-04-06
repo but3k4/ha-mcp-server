@@ -1,4 +1,5 @@
-"""MCP tools for Home Assistant Lovelace dashboard management.
+"""
+MCP tools for Home Assistant Lovelace dashboard management.
 
 All tools use the HA WebSocket API (``/api/websocket``) instead of the
 REST endpoints, because the REST Lovelace API is unavailable when HA is
@@ -34,8 +35,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             List of dashboard objects, each containing ``url_path``,
             ``title``, ``mode``, and sidebar visibility flags.
         """
-        result = await client.ws_command("lovelace/dashboards/list")
-        return result  # type: ignore[return-value]
+        return await client.ws_command("lovelace/dashboards/list")  # type: ignore[return-value]
 
     @mcp.tool()
     async def get_dashboard_config(url_path: str | None = None) -> dict[str, Any]:
@@ -54,8 +54,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         kwargs: dict[str, Any] = {}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
-        result = await client.ws_command("lovelace/config", **kwargs)
-        return result  # type: ignore[return-value]
+        return await client.ws_command("lovelace/config", **kwargs)  # type: ignore[return-value]
 
     @mcp.tool()
     async def create_dashboard(
@@ -90,8 +89,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         }
         if icon:
             kwargs["icon"] = icon
-        result = await client.ws_command("lovelace/dashboards/create", **kwargs)
-        return result  # type: ignore[return-value]
+        return await client.ws_command("lovelace/dashboards/create", **kwargs)  # type: ignore[return-value]
 
     @mcp.tool()
     async def update_dashboard_config(

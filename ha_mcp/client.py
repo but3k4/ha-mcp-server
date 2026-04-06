@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 _WEBSOCKET_PATH = "/api/websocket"
+_HTTP_ERROR_THRESHOLD = 400
 
 
 class HomeAssistantError(Exception):
@@ -38,7 +39,7 @@ async def _parse_response(response: aiohttp.ClientResponse) -> Any:
         HomeAssistantError: If the HTTP status code indicates an error.
     """
 
-    if response.status >= 400:
+    if response.status >= _HTTP_ERROR_THRESHOLD:
         body = await response.text()
         raise HomeAssistantError(
             f"HA API error {response.status} for {response.url}: {body}"
@@ -181,35 +182,33 @@ class HomeAssistantClient:
         )
 
         async with aiohttp.ClientSession() as session, session.ws_connect(ws_url) as ws:
-                first = await ws.receive_json()
-                if first.get("type") != "auth_required":
-                    raise HomeAssistantError(
-                        f"Expected auth_required, got {first.get('type')!r}"
-                    )
+            first = await ws.receive_json()
+            if first.get("type") != "auth_required":
+                raise HomeAssistantError(
+                    f"Expected auth_required, got {first.get('type')!r}"
+                )
 
-                await ws.send_json({"type": "auth", "access_token": self._token})
-                auth_msg = await ws.receive_json()
-                if auth_msg.get("type") != "auth_ok":
-                    raise HomeAssistantError(
-                        f"WebSocket authentication failed: {auth_msg}"
-                    )
+            await ws.send_json({"type": "auth", "access_token": self._token})
+            auth_msg = await ws.receive_json()
+            if auth_msg.get("type") != "auth_ok":
+                raise HomeAssistantError(f"WebSocket authentication failed: {auth_msg}")
 
-                cmd_id = 1
-                await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
+            cmd_id = 1
+            await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
 
-                while True:
-                    msg = await ws.receive_json()
-                    if msg.get("id") == cmd_id:
-                        break
+            while True:
+                msg = await ws.receive_json()
+                if msg.get("id") == cmd_id:
+                    break
 
-                if not msg.get("success"):
-                    error = msg.get("error", {})
-                    raise HomeAssistantError(
-                        f"WS command {msg_type!r} failed: "
-                        f"{error.get('code')} — {error.get('message')}"
-                    )
+            if not msg.get("success"):
+                error = msg.get("error", {})
+                raise HomeAssistantError(
+                    f"WS command {msg_type!r} failed: "
+                    f"{error.get('code')} — {error.get('message')}"
+                )
 
-                return msg.get("result")
+            return msg.get("result")
 
     async def delete(self, path: str) -> Any:
         """

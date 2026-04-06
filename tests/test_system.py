@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 import pytest
 
@@ -64,9 +66,7 @@ async def test_get_ha_config(tools: dict[str, Any], mock_client: MagicMock) -> N
 async def test_check_config_valid(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    check_config returns the validation result dict when the configuration is valid.
-    """
+    """check_config returns the validation result dict when the configuration is valid."""
 
     mock_client.post.return_value = {"result": "valid", "errors": []}
     result = await tools["check_config"]()
@@ -92,9 +92,7 @@ async def test_check_config_invalid(
 
 
 async def test_restart_ha(tools: dict[str, Any], mock_client: MagicMock) -> None:
-    """
-    restart_ha POSTs to the core restart endpoint and returns a confirmation string.
-    """
+    """restart_ha POSTs to the core restart endpoint and returns a confirmation string."""
 
     mock_client.post.return_value = "restarting"
     result = await tools["restart_ha"]()
@@ -183,9 +181,7 @@ async def test_update_os(tools: dict[str, Any], mock_client: MagicMock) -> None:
 
 
 async def test_list_integrations(tools: dict[str, Any], mock_client: MagicMock) -> None:
-    """
-    list_integrations returns all config entries from /api/config/config_entries/entry.
-    """
+    """list_integrations returns all config entries from /api/config/config_entries/entry."""
 
     entries = [{"entry_id": "e1", "domain": "hue", "title": "Hue", "state": "loaded"}]
     mock_client.get.return_value = entries
@@ -197,9 +193,7 @@ async def test_list_integrations(tools: dict[str, Any], mock_client: MagicMock) 
 async def test_reload_integration(
     tools: dict[str, Any], mock_client: MagicMock
 ) -> None:
-    """
-    reload_integration POSTs to the entry reload endpoint and returns the response dict.
-    """
+    """reload_integration POSTs to the entry reload endpoint and returns the response dict."""
 
     mock_client.post.return_value = {"require_restart": False}
     result = await tools["reload_integration"]("entry_id_1")
@@ -230,9 +224,7 @@ async def test_list_users(tools: dict[str, Any], mock_client: MagicMock) -> None
 
 
 async def test_create_backup(tools: dict[str, Any], mock_client: MagicMock) -> None:
-    """
-    create_backup POSTs to the full backup endpoint and returns the backup data dict.
-    """
+    """create_backup POSTs to the full backup endpoint and returns the backup data dict."""
 
     mock_client.post.return_value = {"data": {"slug": "abc123"}}
     result = await tools["create_backup"]()
