@@ -1,15 +1,18 @@
 """
 MCP tools for Home Assistant Lovelace dashboard management.
 
-All tools use the HA WebSocket API (``/api/websocket``) instead of the
-REST endpoints, because the REST Lovelace API is unavailable when HA is
-configured in YAML mode.  The WebSocket API works in both storage and
-YAML mode.
+All tools use the HA WebSocket API (``/api/websocket``). The Lovelace
+dashboard API is not available over REST in YAML-mode installations.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+
+from mcp.server.fastmcp import Context
+from mcp.types import ToolAnnotations
+
+from ha_mcp.client import HomeAssistantError
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -17,32 +20,41 @@ if TYPE_CHECKING:
     from ha_mcp.client import HomeAssistantClient
 
 
-def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
-    """
-    Register all Lovelace dashboard tools on the MCP server.
+def register(mcp: FastMCP) -> None:
+    """Register all Lovelace dashboard tools on the MCP server."""
 
-    Args:
-        mcp: The FastMCP server instance to register tools on.
-        client: The authenticated Home Assistant client.
-    """
-
-    @mcp.tool()
-    async def list_dashboards() -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_dashboards(ctx: Context) -> list[dict[str, Any]] | str:
         """
         List all Lovelace dashboards configured in Home Assistant.
+
+        Uses the Lovelace WebSocket API.
+
+        Args:
+            ctx: MCP request context (injected by FastMCP).
 
         Returns:
             List of dashboard objects, each containing ``url_path``,
             ``title``, ``mode``, and sidebar visibility flags.
         """
-        return await client.ws_command("lovelace/dashboards/list")  # type: ignore[return-value]
 
-    @mcp.tool()
-    async def get_dashboard_config(url_path: str | None = None) -> dict[str, Any]:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
+            return await client.ws_command("lovelace/dashboards/list")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
+
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def get_dashboard_config(
+        ctx: Context, url_path: str | None = None
+    ) -> dict[str, Any] | str:
         """
         Get the full Lovelace configuration for a dashboard.
 
+        Uses the Lovelace WebSocket API.
+
         Args:
+            ctx: MCP request context (injected by FastMCP).
             url_path: Dashboard URL path, e.g. ``kiosk`` for a dashboard
                 accessible at ``/dashboard-kiosk/``.  Leave ``None`` or
                 pass ``"lovelace"`` to target the default dashboard.
@@ -51,23 +63,32 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             Full dashboard config dict containing ``views`` and optional
             ``title`` and ``background`` fields.
         """
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         kwargs: dict[str, Any] = {}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
-        return await client.ws_command("lovelace/config", **kwargs)  # type: ignore[return-value]
+        try:
+            return await client.ws_command("lovelace/config", **kwargs)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def create_dashboard(
+        ctx: Context,
         url_path: str,
         title: str,
         icon: str | None = None,
         show_in_sidebar: bool = True,
         require_admin: bool = False,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | str:
         """
         Create a new Lovelace dashboard.
 
+        Uses the Lovelace WebSocket API.
+
         Args:
+            ctx: MCP request context (injected by FastMCP).
             url_path: Unique URL path for the dashboard.  HA will expose
                 it at ``/dashboard-{url_path}/``, e.g. ``tablet`` becomes
                 ``/dashboard-tablet/``.
@@ -81,6 +102,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Returns:
             The created dashboard object returned by HA.
         """
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         kwargs: dict[str, Any] = {
             "url_path": url_path,
             "title": title,
@@ -89,17 +112,24 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         }
         if icon:
             kwargs["icon"] = icon
-        return await client.ws_command("lovelace/dashboards/create", **kwargs)  # type: ignore[return-value]
+        try:
+            return await client.ws_command("lovelace/dashboards/create", **kwargs)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def update_dashboard_config(
+        ctx: Context,
         config: dict[str, Any],
         url_path: str | None = None,
     ) -> str:
         """
         Replace the full configuration of a Lovelace dashboard.
 
+        Uses the Lovelace WebSocket API.
+
         Args:
+            ctx: MCP request context (injected by FastMCP).
             config: Complete dashboard config dict, must include ``views``.
             url_path: Dashboard URL path to update.  ``None`` or
                 ``"lovelace"`` targets the default dashboard.
@@ -107,14 +137,20 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Returns:
             Confirmation string.
         """
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         kwargs: dict[str, Any] = {"config": config}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
-        await client.ws_command("lovelace/config/save", **kwargs)
+        try:
+            await client.ws_command("lovelace/config/save", **kwargs)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
         return "Dashboard configuration saved."
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def update_dashboard(
+        ctx: Context,
         dashboard_id: str,
         title: str | None = None,
         url_path: str | None = None,
@@ -125,7 +161,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         """
         Update metadata for an existing Lovelace dashboard.
 
+        Uses the Lovelace WebSocket API.
+
         Args:
+            ctx: MCP request context (injected by FastMCP).
             dashboard_id: Internal dashboard ID as returned by ``list_dashboards``
                 (the ``id`` field, not ``url_path``), e.g. ``dashboard_ios``.
             title: New display title.
@@ -137,6 +176,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Returns:
             Confirmation string with the updated dashboard ID.
         """
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         kwargs: dict[str, object] = {}
         if title is not None:
             kwargs["title"] = title
@@ -148,17 +189,23 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             kwargs["show_in_sidebar"] = show_in_sidebar
         if require_admin is not None:
             kwargs["require_admin"] = require_admin
-        await client.ws_command(
-            "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
-        )
+        try:
+            await client.ws_command(
+                "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
+            )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
         return f"Dashboard {dashboard_id!r} updated."
 
-    @mcp.tool()
-    async def delete_dashboard(dashboard_id: str) -> str:
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
+    async def delete_dashboard(ctx: Context, dashboard_id: str) -> str:
         """
-        Delete a Lovelace dashboard by its ID.
+        Delete a Lovelace dashboard by its ID. This action is irreversible.
+
+        Uses the Lovelace WebSocket API.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             dashboard_id: The internal dashboard ID as returned by
                 ``list_dashboards``, e.g. ``dashboard_tablet``.  Note that
                 this is the ``id`` field, not the ``url_path``.
@@ -166,5 +213,12 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         Returns:
             Confirmation string.
         """
-        await client.ws_command("lovelace/dashboards/delete", dashboard_id=dashboard_id)
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
+            await client.ws_command(
+                "lovelace/dashboards/delete", dashboard_id=dashboard_id
+            )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
         return f"Dashboard {dashboard_id!r} deleted."

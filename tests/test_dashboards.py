@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 import pytest
 
+from ha_mcp.client import HomeAssistantError
 from ha_mcp.tools import dashboards
 from tests.conftest import ToolCapture
 
@@ -21,57 +22,59 @@ _CONFIG: dict[str, Any] = {"title": "Home", "views": [{"title": "Main", "cards":
 
 
 @pytest.fixture
-def tools(mock_client: MagicMock) -> dict[str, Any]:
-    """Register dashboard tools against a mock client and return the tool dict."""
+def tools() -> dict[str, Any]:
+    """Register dashboard tools and return the tool dict."""
 
     capture = ToolCapture()
-    dashboards.register(capture, mock_client)  # type: ignore[arg-type]
+    dashboards.register(capture)  # type: ignore[arg-type]
     return capture.tools
 
 
-async def test_list_dashboards(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_list_dashboards(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """list_dashboards calls lovelace/dashboards/list and returns the result."""
 
     mock_client.ws_command.return_value = _DASHBOARDS
-    result = await tools["list_dashboards"]()
+    result = await tools["list_dashboards"](ctx=mock_ctx)
     assert len(result) == 2
     assert result[0]["url_path"] == "lovelace"
     mock_client.ws_command.assert_called_once_with("lovelace/dashboards/list")
 
 
 async def test_get_dashboard_config_default(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_dashboard_config fetches the default dashboard when url_path is None."""
 
     mock_client.ws_command.return_value = _CONFIG
-    result = await tools["get_dashboard_config"]()
+    result = await tools["get_dashboard_config"](ctx=mock_ctx)
     assert "views" in result
     mock_client.ws_command.assert_called_once_with("lovelace/config")
 
 
 async def test_get_dashboard_config_named(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_dashboard_config passes url_path for non-default dashboards."""
 
     mock_client.ws_command.return_value = _CONFIG
-    await tools["get_dashboard_config"](url_path="kiosk")
+    await tools["get_dashboard_config"](ctx=mock_ctx, url_path="kiosk")
     mock_client.ws_command.assert_called_once_with("lovelace/config", url_path="kiosk")
 
 
 async def test_get_dashboard_config_default_url_path(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """url_path='lovelace' is treated the same as None — no url_path kwarg sent."""
+    """url_path='lovelace' is treated the same as None. No url_path kwarg is sent."""
 
     mock_client.ws_command.return_value = _CONFIG
-    await tools["get_dashboard_config"](url_path="lovelace")
+    await tools["get_dashboard_config"](ctx=mock_ctx, url_path="lovelace")
     mock_client.ws_command.assert_called_once_with("lovelace/config")
 
 
 async def test_create_dashboard_minimal(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     create_dashboard sends default sidebar and admin flags when optional args
@@ -79,7 +82,9 @@ async def test_create_dashboard_minimal(
     """
 
     mock_client.ws_command.return_value = {"url_path": "new-dash", "title": "New"}
-    result = await tools["create_dashboard"](url_path="new-dash", title="New")
+    result = await tools["create_dashboard"](
+        ctx=mock_ctx, url_path="new-dash", title="New"
+    )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/dashboards/create",
         url_path="new-dash",
@@ -91,12 +96,13 @@ async def test_create_dashboard_minimal(
 
 
 async def test_create_dashboard_with_icon(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """create_dashboard includes icon and custom sidebar/admin flags when provided."""
 
     mock_client.ws_command.return_value = {}
     await tools["create_dashboard"](
+        ctx=mock_ctx,
         url_path="admin-dash",
         title="Admin",
         icon="mdi:shield",
@@ -110,7 +116,7 @@ async def test_create_dashboard_with_icon(
 
 
 async def test_update_dashboard_config_default(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     update_dashboard_config sends lovelace/config/save with config only when
@@ -118,7 +124,7 @@ async def test_update_dashboard_config_default(
     """
 
     mock_client.ws_command.return_value = None
-    result = await tools["update_dashboard_config"](_CONFIG)
+    result = await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
     mock_client.ws_command.assert_called_once_with(
         "lovelace/config/save",
         config=_CONFIG,
@@ -127,12 +133,14 @@ async def test_update_dashboard_config_default(
 
 
 async def test_update_dashboard_config_named(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """update_dashboard_config includes url_path for named dashboards."""
 
     mock_client.ws_command.return_value = None
-    await tools["update_dashboard_config"](_CONFIG, url_path="kiosk")
+    await tools["update_dashboard_config"](
+        ctx=mock_ctx, config=_CONFIG, url_path="kiosk"
+    )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/config/save",
         url_path="kiosk",
@@ -140,14 +148,16 @@ async def test_update_dashboard_config_named(
     )
 
 
-async def test_delete_dashboard(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_delete_dashboard(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """
     delete_dashboard calls lovelace/dashboards/delete with dashboard_id and
     returns a confirmation string.
     """
 
     mock_client.ws_command.return_value = None
-    result = await tools["delete_dashboard"]("dashboard_old")
+    result = await tools["delete_dashboard"](ctx=mock_ctx, dashboard_id="dashboard_old")
     mock_client.ws_command.assert_called_once_with(
         "lovelace/dashboards/delete",
         dashboard_id="dashboard_old",
@@ -155,14 +165,18 @@ async def test_delete_dashboard(tools: dict[str, Any], mock_client: MagicMock) -
     assert "dashboard_old" in result
 
 
-async def test_update_dashboard(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_update_dashboard(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """
     update_dashboard calls lovelace/dashboards/update with only the provided
     fields and returns a confirmation string.
     """
 
     mock_client.ws_command.return_value = None
-    result = await tools["update_dashboard"]("dashboard_ios", title="Tablet")
+    result = await tools["update_dashboard"](
+        ctx=mock_ctx, dashboard_id="dashboard_ios", title="Tablet"
+    )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/dashboards/update",
         dashboard_id="dashboard_ios",
@@ -172,13 +186,14 @@ async def test_update_dashboard(tools: dict[str, Any], mock_client: MagicMock) -
 
 
 async def test_update_dashboard_multiple_fields(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """update_dashboard passes only the non-None kwargs to ws_command."""
 
     mock_client.ws_command.return_value = None
     await tools["update_dashboard"](
-        "dashboard_ios",
+        ctx=mock_ctx,
+        dashboard_id="dashboard_ios",
         title="Tablet",
         icon="mdi:tablet",
         show_in_sidebar=True,
@@ -190,3 +205,73 @@ async def test_update_dashboard_multiple_fields(
         icon="mdi:tablet",
         show_in_sidebar=True,
     )
+
+
+async def test_list_dashboards_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_dashboards returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["list_dashboards"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_get_dashboard_config_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """get_dashboard_config returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["get_dashboard_config"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_create_dashboard_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """create_dashboard returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["create_dashboard"](
+        ctx=mock_ctx, url_path="new-dash", title="New"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_update_dashboard_config_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """update_dashboard_config returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_update_dashboard_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """update_dashboard returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["update_dashboard"](
+        ctx=mock_ctx, dashboard_id="dashboard_ios", title="Tablet"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_delete_dashboard_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """delete_dashboard returns an error string when the WebSocket call fails."""
+
+    mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
+    result = await tools["delete_dashboard"](ctx=mock_ctx, dashboard_id="dashboard_old")
+    assert isinstance(result, str)
+    assert result.startswith("Error:")

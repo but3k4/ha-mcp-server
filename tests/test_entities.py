@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 import pytest
 
+from ha_mcp.client import HomeAssistantError
 from ha_mcp.tools import entities
 from tests.conftest import ToolCapture
 
@@ -33,54 +34,60 @@ _STATES: list[dict[str, Any]] = [
 
 
 @pytest.fixture
-def tools(mock_client: MagicMock) -> dict[str, Any]:
-    """Register entity tools against a mock client and return the tool dict."""
+def tools() -> dict[str, Any]:
+    """Register entity tools and return the tool dict."""
 
     capture = ToolCapture()
-    entities.register(capture, mock_client)  # type: ignore[arg-type]
+    entities.register(capture)  # type: ignore[arg-type]
     return capture.tools
 
 
-async def test_list_entities_all(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_list_entities_all(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """list_entities returns all states from /api/states when no domain filter is given."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["list_entities"]()
+    result = await tools["list_entities"](ctx=mock_ctx)
     assert result == _STATES
     mock_client.get.assert_called_once_with("/api/states")
 
 
 async def test_list_entities_domain_filter(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_entities filters results to only entities matching the given domain prefix."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["list_entities"](domain="light")
+    result = await tools["list_entities"](ctx=mock_ctx, domain="light")
     assert len(result) == 1
     assert result[0]["entity_id"] == "light.kitchen"
 
 
 async def test_list_entities_no_match(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_entities returns an empty list when no entity matches the given domain."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["list_entities"](domain="climate")
+    result = await tools["list_entities"](ctx=mock_ctx, domain="climate")
     assert result == []
 
 
-async def test_get_entity(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_get_entity(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """get_entity fetches a single entity state by entity_id from /api/states/{entity_id}."""
 
     mock_client.get.return_value = _STATES[0]
-    result = await tools["get_entity"]("light.kitchen")
+    result = await tools["get_entity"](ctx=mock_ctx, entity_id="light.kitchen")
     mock_client.get.assert_called_once_with("/api/states/light.kitchen")
     assert result["entity_id"] == "light.kitchen"
 
 
-async def test_set_entity_state(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_set_entity_state(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """set_entity_state POSTs state and empty attributes to /api/states/{entity_id}."""
 
     expected = {
@@ -89,7 +96,9 @@ async def test_set_entity_state(tools: dict[str, Any], mock_client: MagicMock) -
         "attributes": {},
     }
     mock_client.post.return_value = expected
-    result = await tools["set_entity_state"]("input_boolean.vacation_mode", "on")
+    result = await tools["set_entity_state"](
+        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
+    )
     mock_client.post.assert_called_once_with(
         "/api/states/input_boolean.vacation_mode",
         {"state": "on", "attributes": {}},
@@ -98,13 +107,16 @@ async def test_set_entity_state(tools: dict[str, Any], mock_client: MagicMock) -
 
 
 async def test_set_entity_state_with_attributes(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """set_entity_state merges custom attributes into the POST payload."""
 
     mock_client.post.return_value = {}
     await tools["set_entity_state"](
-        "input_text.label", "hello", attributes={"editable": True}
+        ctx=mock_ctx,
+        entity_id="input_text.label",
+        state="hello",
+        attributes={"editable": True},
     )
     mock_client.post.assert_called_once_with(
         "/api/states/input_text.label",
@@ -112,7 +124,9 @@ async def test_set_entity_state_with_attributes(
     )
 
 
-async def test_call_service(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_call_service(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """
     call_service POSTs to /api/services/{domain}/{service} with service_data
     and returns affected states.
@@ -120,7 +134,10 @@ async def test_call_service(tools: dict[str, Any], mock_client: MagicMock) -> No
 
     mock_client.post.return_value = [_STATES[0]]
     result = await tools["call_service"](
-        "light", "turn_on", {"entity_id": "light.kitchen"}
+        ctx=mock_ctx,
+        domain="light",
+        service="turn_on",
+        service_data={"entity_id": "light.kitchen"},
     )
     mock_client.post.assert_called_once_with(
         "/api/services/light/turn_on",
@@ -130,7 +147,7 @@ async def test_call_service(tools: dict[str, Any], mock_client: MagicMock) -> No
 
 
 async def test_call_service_no_data(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     call_service sends an empty dict as service_data when no service_data
@@ -138,62 +155,64 @@ async def test_call_service_no_data(
     """
 
     mock_client.post.return_value = []
-    await tools["call_service"]("homeassistant", "reload_all")
+    await tools["call_service"](
+        ctx=mock_ctx, domain="homeassistant", service="reload_all"
+    )
     mock_client.post.assert_called_once_with(
         "/api/services/homeassistant/reload_all", {}
     )
 
 
 async def test_search_entities_by_entity_id(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against entity_id fields."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["search_entities"]("kitchen")
+    result = await tools["search_entities"](ctx=mock_ctx, query="kitchen")
     assert len(result) == 1
     assert result[0]["entity_id"] == "light.kitchen"
 
 
 async def test_search_entities_by_friendly_name(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against the friendly_name attribute."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["search_entities"]("ceiling fan")
+    result = await tools["search_entities"](ctx=mock_ctx, query="ceiling fan")
     assert len(result) == 1
     assert result[0]["entity_id"] == "switch.fan"
 
 
 async def test_search_entities_by_state(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against the state value."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["search_entities"]("off")
+    result = await tools["search_entities"](ctx=mock_ctx, query="off")
     assert len(result) == 1
     assert result[0]["entity_id"] == "switch.fan"
 
 
 async def test_search_entities_case_insensitive(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """search_entities matching is case-insensitive."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["search_entities"]("KITCHEN")
+    result = await tools["search_entities"](ctx=mock_ctx, query="KITCHEN")
     assert len(result) == 1
 
 
 async def test_search_entities_no_match(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """search_entities returns an empty list when no entity matches the keyword."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["search_entities"]("zzznomatch")
+    result = await tools["search_entities"](ctx=mock_ctx, query="zzznomatch")
     assert result == []
 
 
@@ -203,7 +222,7 @@ _AREA_ENTRIES: list[dict[str, Any]] = [
 
 
 async def test_list_devices_merges_area_and_state(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     list_devices merges area info into each entity's state dict. Unassigned
@@ -213,7 +232,7 @@ async def test_list_devices_merges_area_and_state(
     mock_client.post.return_value = json.dumps(_AREA_ENTRIES)
     mock_client.get.return_value = _STATES
 
-    result = await tools["list_devices"]()
+    result = await tools["list_devices"](ctx=mock_ctx)
 
     kitchen = next(d for d in result if d["entity_id"] == "light.kitchen")
     assert kitchen["area_id"] == "kitchen"
@@ -226,19 +245,19 @@ async def test_list_devices_merges_area_and_state(
 
 
 async def test_list_devices_area_result_as_list(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_devices handles area_result already parsed as a list (not a JSON string)."""
 
     mock_client.post.return_value = _AREA_ENTRIES
     mock_client.get.return_value = _STATES
 
-    result = await tools["list_devices"]()
+    result = await tools["list_devices"](ctx=mock_ctx)
     assert any(d["area_id"] == "kitchen" for d in result)
 
 
 async def test_list_entity_registry_only_area_entities(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     list_entity_registry returns entities with area info and friendly_name
@@ -248,47 +267,49 @@ async def test_list_entity_registry_only_area_entities(
     mock_client.post.return_value = _AREA_ENTRIES
     mock_client.get.return_value = _STATES
 
-    result = await tools["list_entity_registry"]()
+    result = await tools["list_entity_registry"](ctx=mock_ctx)
     assert len(result) == 1
     assert result[0]["entity_id"] == "light.kitchen"
     assert result[0]["friendly_name"] == "Kitchen Light"
     assert result[0]["area_name"] == "Kitchen"
 
 
-async def test_list_services(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_list_services(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """list_services returns the raw services dict from /api/services."""
 
     services: dict[str, Any] = {"light": {"turn_on": {}, "turn_off": {}}}
     mock_client.get.return_value = services
-    result = await tools["list_services"]()
+    result = await tools["list_services"](ctx=mock_ctx)
     assert result == services
     mock_client.get.assert_called_once_with("/api/services")
 
 
 async def test_list_areas_json_string(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_areas parses the response when the API returns areas as a JSON string."""
 
     areas = [{"area_id": "kitchen", "name": "Kitchen"}]
     mock_client.post.return_value = json.dumps(areas)
-    result = await tools["list_areas"]()
+    result = await tools["list_areas"](ctx=mock_ctx)
     assert result == areas
 
 
 async def test_list_areas_already_list(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_areas passes through the response unchanged when it is already a list."""
 
     areas = [{"area_id": "kitchen", "name": "Kitchen"}]
     mock_client.post.return_value = areas
-    result = await tools["list_areas"]()
+    result = await tools["list_areas"](ctx=mock_ctx)
     assert result == areas
 
 
 async def test_get_entity_history_no_times(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     get_entity_history fetches from /api/history/period with only the entity
@@ -297,7 +318,9 @@ async def test_get_entity_history_no_times(
 
     history = [[{"entity_id": "sensor.temperature", "state": "21.5"}]]
     mock_client.get.return_value = history
-    result = await tools["get_entity_history"]("sensor.temperature")
+    result = await tools["get_entity_history"](
+        ctx=mock_ctx, entity_id="sensor.temperature"
+    )
     assert result == history
     mock_client.get.assert_called_once_with(
         "/api/history/period",
@@ -306,13 +329,15 @@ async def test_get_entity_history_no_times(
 
 
 async def test_get_entity_history_with_start(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_entity_history includes start_time in the URL path when provided."""
 
     mock_client.get.return_value = [[]]
     await tools["get_entity_history"](
-        "sensor.temperature", start_time="2024-01-01T00:00:00"
+        ctx=mock_ctx,
+        entity_id="sensor.temperature",
+        start_time="2024-01-01T00:00:00",
     )
     mock_client.get.assert_called_once_with(
         "/api/history/period/2024-01-01T00:00:00",
@@ -321,7 +346,7 @@ async def test_get_entity_history_with_start(
 
 
 async def test_get_entity_history_with_end(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     get_entity_history passes end_time as a query param alongside start_time
@@ -330,7 +355,8 @@ async def test_get_entity_history_with_end(
 
     mock_client.get.return_value = [[]]
     await tools["get_entity_history"](
-        "sensor.temperature",
+        ctx=mock_ctx,
+        entity_id="sensor.temperature",
         start_time="2024-01-01T00:00:00",
         end_time="2024-01-02T00:00:00",
     )
@@ -344,36 +370,37 @@ async def test_get_entity_history_with_end(
 
 
 async def test_get_logbook_no_filters(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_logbook fetches /api/logbook with no params when no arguments are provided."""
 
     entries = [{"name": "Kitchen Light", "message": "turned on"}]
     mock_client.get.return_value = entries
-    result = await tools["get_logbook"]()
+    result = await tools["get_logbook"](ctx=mock_ctx)
     assert result == entries
     mock_client.get.assert_called_once_with("/api/logbook", params=None)
 
 
 async def test_get_logbook_with_entity(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_logbook passes entity_id as the 'entity' query param."""
 
     mock_client.get.return_value = []
-    await tools["get_logbook"](entity_id="light.kitchen")
+    await tools["get_logbook"](ctx=mock_ctx, entity_id="light.kitchen")
     mock_client.get.assert_called_once_with(
         "/api/logbook", params={"entity": "light.kitchen"}
     )
 
 
 async def test_get_logbook_with_time_range(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """get_logbook uses start_time in the URL path and end_time as a query param."""
 
     mock_client.get.return_value = []
     await tools["get_logbook"](
+        ctx=mock_ctx,
         entity_id="light.kitchen",
         start_time="2024-01-01T00:00:00",
         end_time="2024-01-02T00:00:00",
@@ -387,14 +414,18 @@ async def test_get_logbook_with_time_range(
     )
 
 
-async def test_render_template(tools: dict[str, Any], mock_client: MagicMock) -> None:
+async def test_render_template(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
     """
     render_template POSTs the template string to /api/template and returns
     the rendered result.
     """
 
     mock_client.post.return_value = "21.5"
-    result = await tools["render_template"]("{{ states('sensor.temperature') }}")
+    result = await tools["render_template"](
+        ctx=mock_ctx, template="{{ states('sensor.temperature') }}"
+    )
     assert result == "21.5"
     mock_client.post.assert_called_once_with(
         "/api/template",
@@ -403,7 +434,7 @@ async def test_render_template(tools: dict[str, Any], mock_client: MagicMock) ->
 
 
 async def test_fire_event_no_data(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     fire_event POSTs to /api/events/{event_type} with an empty payload when no
@@ -411,16 +442,169 @@ async def test_fire_event_no_data(
     """
 
     mock_client.post.return_value = {"message": "Event fired."}
-    result = await tools["fire_event"]("my_custom_event")
+    result = await tools["fire_event"](ctx=mock_ctx, event_type="my_custom_event")
     assert "message" in result
     mock_client.post.assert_called_once_with("/api/events/my_custom_event", {})
 
 
 async def test_fire_event_with_data(
-    tools: dict[str, Any], mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """fire_event POSTs event_data as the request body when provided."""
 
     mock_client.post.return_value = {"message": "Event fired."}
-    await tools["fire_event"]("my_event", event_data={"key": "value"})
+    await tools["fire_event"](
+        ctx=mock_ctx, event_type="my_event", event_data={"key": "value"}
+    )
     mock_client.post.assert_called_once_with("/api/events/my_event", {"key": "value"})
+
+
+async def test_list_entities_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_entities returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["list_entities"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_get_entity_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """get_entity returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["get_entity"](ctx=mock_ctx, entity_id="light.kitchen")
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_set_entity_state_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """set_entity_state returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["set_entity_state"](
+        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_call_service_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """call_service returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["call_service"](
+        ctx=mock_ctx, domain="light", service="turn_on"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_search_entities_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """search_entities returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["search_entities"](ctx=mock_ctx, query="kitchen")
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_list_services_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_services returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["list_services"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_list_areas_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_areas returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["list_areas"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_list_devices_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_devices returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["list_devices"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_list_entity_registry_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """list_entity_registry returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["list_entity_registry"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_get_entity_history_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """get_entity_history returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["get_entity_history"](
+        ctx=mock_ctx, entity_id="sensor.temperature"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_get_logbook_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """get_logbook returns an error string when the API call fails."""
+
+    mock_client.get.side_effect = HomeAssistantError("api failure")
+    result = await tools["get_logbook"](ctx=mock_ctx)
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_render_template_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """render_template returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["render_template"](
+        ctx=mock_ctx, template="{{ states('sensor.temperature') }}"
+    )
+    assert isinstance(result, str)
+    assert result.startswith("Error:")
+
+
+async def test_fire_event_error(
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+) -> None:
+    """fire_event returns an error string when the API call fails."""
+
+    mock_client.post.side_effect = HomeAssistantError("api failure")
+    result = await tools["fire_event"](ctx=mock_ctx, event_type="my_custom_event")
+    assert isinstance(result, str)
+    assert result.startswith("Error:")

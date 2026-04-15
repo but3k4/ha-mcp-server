@@ -9,6 +9,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mcp.server.fastmcp import Context
+from mcp.types import ToolAnnotations
+
+from ha_mcp.client import HomeAssistantError
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -27,17 +32,13 @@ _HELPER_DOMAINS = frozenset(
 )
 
 
-def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
-    """
-    Register all input helper and timer tools on the MCP server.
+def register(mcp: FastMCP) -> None:
+    """Register all input helper and timer tools on the MCP server."""
 
-    Args:
-        mcp: The FastMCP server instance to register tools on.
-        client: The authenticated Home Assistant client.
-    """
-
-    @mcp.tool()
-    async def list_input_helpers(domain: str | None = None) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_input_helpers(
+        ctx: Context, domain: str | None = None
+    ) -> list[dict[str, Any]] | str:
         """
         List Home Assistant input helper and timer entities.
 
@@ -47,97 +48,121 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         provided only entities of that specific type are returned.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             domain: Optional domain filter, e.g. ``input_boolean`` or ``timer``.
 
         Returns:
             List of entity state objects for the matching helper domains.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             states: list[dict[str, Any]] = await client.get("/api/states")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         if domain is not None:
             return [s for s in states if s["entity_id"].startswith(f"{domain}.")]
 
         return [s for s in states if s["entity_id"].split(".")[0] in _HELPER_DOMAINS]
 
-    @mcp.tool()
-    async def set_input_boolean(entity_id: str, state: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def set_input_boolean(
+        ctx: Context, entity_id: str, state: str
+    ) -> list[dict[str, Any]] | str:
         """
         Turn an ``input_boolean`` helper on or off.
 
         Args:
-            entity_id: Input boolean entity ID, e.g. ``input_boolean.vacation_mode``.
+            ctx: MCP request context (injected by FastMCP).
+            entity_id: Input boolean entity ID,
+                e.g. ``input_boolean.vacation_mode``.
             state: Target state. Must be ``"on"`` or ``"off"``.
 
         Returns:
-            List of affected entity states.
-
-        Raises:
-            ValueError: If ``state`` is not ``"on"`` or ``"off"``.
+            List of affected entity states, or an error string if ``state``
+            is invalid or the API call fails.
         """
 
         if state not in ("on", "off"):
-            raise ValueError(f"state must be 'on' or 'off', got {state!r}")
+            return f"Error: state must be 'on' or 'off', got {state!r}"
 
         service = "turn_on" if state == "on" else "turn_off"
-
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 f"/api/services/input_boolean/{service}",
                 {"entity_id": entity_id},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def set_input_number(entity_id: str, value: float) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def set_input_number(
+        ctx: Context, entity_id: str, value: float
+    ) -> list[dict[str, Any]] | str:
         """
         Set the numeric value of an ``input_number`` helper.
 
         The value must be within the min/max range configured for the entity.
         Use ``get_entity`` to inspect the ``min``, ``max``, and ``step``
         attributes before calling this. HA enforces the range server-side and
-        will raise ``HomeAssistantError`` if the value is out of bounds.
+        will return an error if the value is out of bounds.
 
         Args:
-            entity_id: Input number entity ID, e.g. ``input_number.target_temp``.
+            ctx: MCP request context (injected by FastMCP).
+            entity_id: Input number entity ID,
+                e.g. ``input_number.target_temp``.
             value: New numeric value.
 
         Returns:
             List of affected entity states.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/input_number/set_value",
                 {"entity_id": entity_id, "value": value},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def set_input_select(entity_id: str, option: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def set_input_select(
+        ctx: Context, entity_id: str, option: str
+    ) -> list[dict[str, Any]] | str:
         """
         Select an option on an ``input_select`` helper.
 
         The option must exactly match one of the values listed in the entity's
         ``options`` attribute (case-sensitive). Use ``get_entity`` to retrieve
-        the available options first. HA will raise ``HomeAssistantError`` if
-        the option does not exist in the configured list.
+        the available options first. HA will return an error if the option does
+        not exist in the configured list.
 
         Args:
-            entity_id: Input select entity ID, e.g. ``input_select.preset_mode``.
+            ctx: MCP request context (injected by FastMCP).
+            entity_id: Input select entity ID,
+                e.g. ``input_select.preset_mode``.
             option: Option string to select, e.g. ``"Away"``.
 
         Returns:
             List of affected entity states.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/input_select/select_option",
                 {"entity_id": entity_id, "option": option},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def set_input_text(entity_id: str, value: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def set_input_text(
+        ctx: Context, entity_id: str, value: str
+    ) -> list[dict[str, Any]] | str:
         """
         Set the text value of an ``input_text`` helper.
 
@@ -145,26 +170,32 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         constraints configured for the entity.
 
         Args:
-            entity_id: Input text entity ID, e.g. ``input_text.welcome_message``.
+            ctx: MCP request context (injected by FastMCP).
+            entity_id: Input text entity ID,
+                e.g. ``input_text.welcome_message``.
             value: New text value.
 
         Returns:
             List of affected entity states.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/input_text/set_value",
                 {"entity_id": entity_id, "value": value},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_input_datetime(
+        ctx: Context,
         entity_id: str,
         date: str | None = None,
         time: str | None = None,
         datetime_str: str | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, Any]] | str:
         """
         Set the value of an ``input_datetime`` helper.
 
@@ -176,7 +207,9 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         will be silently ignored by Home Assistant.
 
         Args:
-            entity_id: Input datetime entity ID, e.g. ``input_datetime.alarm_time``.
+            ctx: MCP request context (injected by FastMCP).
+            entity_id: Input datetime entity ID,
+                e.g. ``input_datetime.alarm_time``.
             date: Date string in ``YYYY-MM-DD`` format.
             time: Time string in ``HH:MM:SS`` format.
             datetime_str: Combined datetime in ``YYYY-MM-DD HH:MM:SS`` format.
@@ -193,15 +226,20 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         if datetime_str is not None:
             payload["datetime"] = datetime_str
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/input_datetime/set_datetime", payload
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def start_timer(
-        entity_id: str, duration: str | None = None
-    ) -> list[dict[str, Any]]:
+        ctx: Context,
+        entity_id: str,
+        duration: str | None = None,
+    ) -> list[dict[str, Any]] | str:
         """
         Start or restart a ``timer`` entity.
 
@@ -209,9 +247,10 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         duration. Calling start on an already-running timer restarts it.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Timer entity ID, e.g. ``timer.cooking``.
-            duration: Optional override duration in ``HH:MM:SS`` or ``SS`` format,
-                e.g. ``"00:05:00"`` for five minutes.
+            duration: Optional override duration in ``HH:MM:SS`` or ``SS``
+                format, e.g. ``"00:05:00"`` for five minutes.
 
         Returns:
             List of affected entity states.
@@ -221,30 +260,37 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         if duration is not None:
             payload["duration"] = duration
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post("/api/services/timer/start", payload)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def pause_timer(entity_id: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def pause_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]] | str:
         """
         Pause a running ``timer`` entity.
 
         The remaining time is preserved. Use ``start_timer`` to resume.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Timer entity ID, e.g. ``timer.cooking``.
 
         Returns:
             List of affected entity states.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/timer/pause", {"entity_id": entity_id}
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def cancel_timer(entity_id: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
+    async def cancel_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]] | str:
         """
         Cancel a running or paused ``timer`` entity.
 
@@ -252,13 +298,17 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         event is fired.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Timer entity ID, e.g. ``timer.cooking``.
 
         Returns:
             List of affected entity states.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 "/api/services/timer/cancel", {"entity_id": entity_id}
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"

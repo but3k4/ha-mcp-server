@@ -1,4 +1,4 @@
-"""Tests for server entry point — _load_client and create_server."""
+"""Tests for server entry point: _load_client and create_server."""
 
 from __future__ import annotations
 

@@ -42,5 +42,15 @@ addopts = "--cov=ha_mcp --cov-report=term-missing"
 branch = true
 source = ["ha_mcp"]
 
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+allow_untyped_decorators = true
+# client.get/post/delete return Any (dynamic JSON from HA API); tool functions
+# that directly return those results are correctly typed at the call sites.
+warn_return_any = false
+# Context is generic but type args are not required in tool signatures
+disable_error_code = ["type-arg"]
+
 [tool.bandit]
 exclude_dirs = [".venv", "tests"]

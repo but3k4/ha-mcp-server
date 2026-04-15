@@ -52,11 +52,11 @@ ignore = [
   "PLR0911", "PLR0912", "PLR0913", "PLR0915",
 
   # Noisy / false positives
-  "PLC1901",          # empty-string falsey; too many false positives
+  "PLC1901",          # empty-string falsey. Too many false positives
   "TRY003",           # short inline raise messages are fine
-  "RUF001", "RUF002", "RUF003",  # ambiguous unicode; noisy for non-ASCII content
-  "SIM102",           # nested if; guard clauses are often clearer
-  "SIM108",           # ternary operator; can reduce readability
+  "RUF001", "RUF002", "RUF003",  # ambiguous unicode. Noisy for non-ASCII content
+  "SIM102",           # nested if. Guard clauses are often clearer
+  "SIM108",           # ternary operator. Can reduce readability
 
   # Blank line after docstring required by project convention
   "D202",
@@ -64,7 +64,7 @@ ignore = [
   # JSON API client: Any is the correct return type for dynamic JSON responses
   "ANN401",
 
-  # Class docstring documents constructor parameters; __init__ docstring is redundant
+  # Class docstring documents constructor parameters. __init__ docstring is redundant
   "D107",
 ]
 
@@ -84,3 +84,8 @@ convention = "google"
 
 [lint.per-file-ignores]
 "tests/**" = ["D200", "D205", "PLR2004", "SLF001"]
+# register() nests all tools. Complexity and runtime Context import are inherent to the pattern
+"ha_mcp/tools/entities.py" = ["C901"]
+"ha_mcp/tools/system.py" = ["C901"]
+# FastMCP introspects annotations at runtime. Context must be a regular import, not TYPE_CHECKING
+"ha_mcp/tools/*.py" = ["TC002"]

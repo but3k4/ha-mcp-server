@@ -5,6 +5,11 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from mcp.server.fastmcp import Context
+from mcp.types import ToolAnnotations
+
+from ha_mcp.client import HomeAssistantError
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -27,17 +32,13 @@ _AREA_ENTITIES_TEMPLATE = (
 )
 
 
-def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
-    """
-    Register all entity and service tools on the MCP server.
+def register(mcp: FastMCP) -> None:
+    """Register all entity and service tools on the MCP server."""
 
-    Args:
-        mcp: The FastMCP server instance to register tools on.
-        client: The authenticated Home Assistant client.
-    """
-
-    @mcp.tool()
-    async def list_entities(domain: str | None = None) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_entities(
+        ctx: Context, domain: str | None = None
+    ) -> list[dict[str, Any]] | str:
         """
         List all Home Assistant entities, optionally filtered by domain.
 
@@ -48,6 +49,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         ``<domain>.`` are returned.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             domain: Optional domain filter, e.g. ``light``, ``switch``, ``sensor``.
 
         Returns:
@@ -55,23 +57,27 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             and ``attributes``.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             states: list[dict[str, Any]] = await client.get("/api/states")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         if domain is None:
             return states
 
         return [s for s in states if s["entity_id"].startswith(f"{domain}.")]
 
-    @mcp.tool()
-    async def get_entity(entity_id: str) -> dict[str, Any]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def get_entity(ctx: Context, entity_id: str) -> dict[str, Any] | str:
         """
         Get the current state and attributes of a single entity.
 
-        Fetches the live state directly from the HA state machine. Raises an
-        HTTP error if the entity does not exist.
+        Fetches the live state directly from the HA state machine. Returns an
+        error string if the entity does not exist.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Full entity ID, e.g. ``light.living_room``.
 
         Returns:
@@ -79,15 +85,19 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             ``attributes``, and timestamps.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.get(f"/api/states/{entity_id}")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_entity_state(
+        ctx: Context,
         entity_id: str,
         state: str,
         attributes: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | str:
         """
         Directly set the state and attributes of an entity in the HA state machine.
 
@@ -99,6 +109,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         state to virtual entities that have no dedicated service.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Full entity ID, e.g. ``input_boolean.vacation_mode``.
             state: New state string, e.g. ``on``, ``off``, ``home``.
             attributes: Optional dictionary of attributes to set alongside the state.
@@ -107,18 +118,22 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             The updated entity state object.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 f"/api/states/{entity_id}",
                 {"state": state, "attributes": attributes or {}},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def call_service(
+        ctx: Context,
         domain: str,
         service: str,
         service_data: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, Any]] | str:
         """
         Call a Home Assistant service.
 
@@ -129,6 +144,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         domain/service combinations and their accepted parameters.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             domain: Service domain, e.g. ``light``, ``switch``, ``climate``, ``script``.
             service: Service name, e.g. ``turn_on``, ``turn_off``, ``toggle``.
             service_data: Optional data payload,
@@ -138,14 +154,17 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             List of entity states affected by the service call.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(
                 f"/api/services/{domain}/{service}",
                 service_data or {},
             )
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def search_entities(query: str) -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def search_entities(ctx: Context, query: str) -> list[dict[str, Any]] | str:
         """
         Search for entities by ID, friendly name, or state.
 
@@ -155,14 +174,18 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         and ``state``.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             query: Case-insensitive search string.
 
         Returns:
             Matching entity state objects.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             states: list[dict[str, Any]] = await client.get("/api/states")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         query_lower = query.lower()
         results = []
@@ -179,29 +202,38 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
 
         return results
 
-    @mcp.tool()
-    async def list_services() -> dict[str, Any]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_services(ctx: Context) -> dict[str, Any] | str:
         """
         List all available Home Assistant services grouped by domain.
 
         Useful for discovering what ``domain`` and ``service`` values to pass to
         ``call_service``, and what parameters each service accepts.
 
+        Args:
+            ctx: MCP request context (injected by FastMCP).
+
         Returns:
             Dictionary mapping domain names to their available services and schemas.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.get("/api/services")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def list_areas() -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_areas(ctx: Context) -> list[dict[str, Any]] | str:
         """
         List all configured areas in Home Assistant.
 
         Areas are logical groupings of devices and entities (e.g. "Living Room",
         "Kitchen"). The returned ``area_id`` values can be used with
         ``list_entity_registry`` to filter entities by area.
+
+        Args:
+            ctx: MCP request context (injected by FastMCP).
 
         Returns:
             List of area objects with ``area_id`` and ``name``.
@@ -216,16 +248,19 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             "{{ ns.areas | tojson }}"
         )
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             result = await client.post("/api/template", {"template": template})
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         if isinstance(result, list):
             return result
 
         return json.loads(result)
 
-    @mcp.tool()
-    async def list_devices() -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_devices(ctx: Context) -> list[dict[str, Any]] | str:
         """
         List all entities with their friendly names and area assignments.
 
@@ -236,18 +271,22 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         ``entity_id``. Entities not assigned to any area will have ``area_id``
         and ``area_name`` set to ``null``.
 
+        Args:
+            ctx: MCP request context (injected by FastMCP).
+
         Returns:
             List of objects with ``entity_id``, ``friendly_name``, ``state``,
             ``area_id``, and ``area_name``.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             area_result = await client.post(
                 "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
             )
-
-        async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         area_entries: list[dict[str, Any]] = (
             area_result if isinstance(area_result, list) else json.loads(area_result)
@@ -268,8 +307,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             for state in states
         ]
 
-    @mcp.tool()
-    async def list_entity_registry() -> list[dict[str, Any]]:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def list_entity_registry(ctx: Context) -> list[dict[str, Any]] | str:
         """
         List area-assigned entities with friendly names and current state.
 
@@ -278,18 +317,22 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         names are sourced from live state. Entities without a configured friendly
         name fall back to their ``entity_id``.
 
+        Args:
+            ctx: MCP request context (injected by FastMCP).
+
         Returns:
             List of objects with ``entity_id``, ``friendly_name``, ``state``,
             ``area_id``, and ``area_name``.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             area_result = await client.post(
                 "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
             )
-
-        async with client:
             states: list[dict[str, Any]] = await client.get("/api/states")
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
         area_entries: list[dict[str, Any]] = (
             area_result if isinstance(area_result, list) else json.loads(area_result)
@@ -310,12 +353,13 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             for entry in area_entries
         ]
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_entity_history(
+        ctx: Context,
         entity_id: str,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> list[list[dict[str, Any]]]:
+    ) -> list[list[dict[str, Any]]] | str:
         """
         Retrieve the historical state changes for an entity.
 
@@ -325,6 +369,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         normally contain a single element).
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Full entity ID, e.g. ``sensor.temperature``.
             start_time: ISO 8601 timestamp for the start of the range,
                 e.g. ``2024-01-01T00:00:00``.
@@ -342,15 +387,19 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         if end_time:
             params["end_time"] = end_time
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.get(path, params=params)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_logbook(
+        ctx: Context,
         entity_id: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, Any]] | str:
         """
         Fetch logbook entries, optionally filtered by entity and time range.
 
@@ -360,6 +409,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         by ``entity_id`` narrows results to events involving that specific entity.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             entity_id: Optional entity ID to filter entries.
             start_time: ISO 8601 start timestamp.
             end_time: ISO 8601 end timestamp.
@@ -378,11 +428,14 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         if end_time:
             params["end_time"] = end_time
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.get(path, params=params or None)
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
-    async def render_template(template: str) -> str:
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def render_template(ctx: Context, template: str) -> str:
         """
         Render a Jinja2 template string using Home Assistant's template engine.
 
@@ -392,20 +445,26 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         exposed by other tools.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             template: A Jinja2 template string,
                 e.g. ``{{ states('sensor.temperature') }}``.
 
         Returns:
-            The rendered string result.
+            The rendered string result, or an error string on failure.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post("/api/template", {"template": template})
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def fire_event(
-        event_type: str, event_data: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+        ctx: Context,
+        event_type: str,
+        event_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | str:
         """
         Fire a custom event on the Home Assistant event bus.
 
@@ -415,6 +474,7 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
         through ``call_service`` instead.
 
         Args:
+            ctx: MCP request context (injected by FastMCP).
             event_type: Name of the event to fire, e.g. ``my_custom_event``.
             event_data: Optional dictionary of data to include with the event.
 
@@ -422,5 +482,8 @@ def register(mcp: FastMCP, client: HomeAssistantClient) -> None:
             Confirmation message from HA.
         """
 
-        async with client:
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        try:
             return await client.post(f"/api/events/{event_type}", event_data or {})
+        except HomeAssistantError as exc:
+            return f"Error: {exc}"

@@ -13,7 +13,11 @@ Environment Variables:
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -31,6 +35,16 @@ from ha_mcp.tools import (
     system,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+
+@dataclass
+class AppState:
+    """Lifespan state shared across all tool calls."""
+
+    client: HomeAssistantClient
+
 
 def _load_client() -> HomeAssistantClient:
     """
@@ -44,7 +58,7 @@ def _load_client() -> HomeAssistantClient:
         ValueError: If ``HA_URL`` or ``HA_TOKEN`` are not set in the environment.
     """
 
-    load_dotenv()
+    load_dotenv(Path(__file__).parent.parent / ".env")
 
     ha_url = os.getenv("HA_URL")
     ha_token = os.getenv("HA_TOKEN")
@@ -57,6 +71,20 @@ def _load_client() -> HomeAssistantClient:
     return HomeAssistantClient(base_url=ha_url, token=ha_token)
 
 
+@asynccontextmanager
+async def app_lifespan(app: FastMCP) -> AsyncIterator[AppState]:
+    """
+    Open a single persistent HTTP session for the server's lifetime.
+
+    Yields an :class:`AppState` whose ``client`` is already entered (session
+    open). Tools access it via ``ctx.request_context.lifespan_context.client``.
+    """
+
+    client = _load_client()
+    async with client as c:
+        yield AppState(client=c)
+
+
 def create_server() -> FastMCP:
     """
     Create and configure the FastMCP server with all Home Assistant tools registered.
@@ -65,9 +93,9 @@ def create_server() -> FastMCP:
         Configured FastMCP server instance.
     """
 
-    client = _load_client()
     mcp = FastMCP(
         name="home-assistant",
+        lifespan=app_lifespan,
         instructions=(
             "You are connected to a Home Assistant instance. "
             "You can control smart home devices, manage automations, "
@@ -83,15 +111,15 @@ def create_server() -> FastMCP:
         ),
     )
 
-    entities.register(mcp, client)
-    dashboards.register(mcp, client)
-    addons.register(mcp, client)
-    logs.register(mcp, client)
-    automations.register(mcp, client)
-    system.register(mcp, client)
-    notifications.register(mcp, client)
-    helpers.register(mcp, client)
-    registry.register(mcp, client)
+    entities.register(mcp)
+    dashboards.register(mcp)
+    addons.register(mcp)
+    logs.register(mcp)
+    automations.register(mcp)
+    system.register(mcp)
+    notifications.register(mcp)
+    helpers.register(mcp)
+    registry.register(mcp)
 
     return mcp
 
