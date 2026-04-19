@@ -1,7 +1,7 @@
 """
 Async HTTP client for the Home Assistant REST and Supervisor APIs.
 
-Wraps aiohttp with auth headers and consistent error handling.  Also
+Wraps aiohttp with auth headers and consistent error handling. Also
 provides :meth:`HomeAssistantClient.ws_command` for one-shot WebSocket
 commands, which is required for APIs (such as Lovelace dashboard
 management) that are not available over REST in YAML-mode installations.
@@ -175,6 +175,7 @@ class HomeAssistantClient:
             HomeAssistantError: If authentication is rejected or the command
                 returns ``success: false``.
         """
+
         parsed = urlparse(self._base_url)
         scheme = "wss" if parsed.scheme == "https" else "ws"
         ws_url = urlunparse(
