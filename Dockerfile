@@ -1,12 +1,15 @@
-FROM python:3.14-slim
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
 WORKDIR /app
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock LICENSE ./
+COPY ha_mcp/ ./ha_mcp/
 RUN uv sync --frozen --no-dev
 
-COPY ha_mcp/ ./ha_mcp/
+EXPOSE 8765
 
-CMD ["uv", "run", "ha-mcp"]
+ENV TRANSPORT=sse \
+    PORT=8765 \
+    LOG_LEVEL=WARNING
+
+CMD ["/app/.venv/bin/ha-mcp"]

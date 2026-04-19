@@ -117,6 +117,17 @@ Common `HA_URL` formats:
 
 ---
 
+## Environment Variables
+
+| Variable    | Required | Default  | Description                               |
+|-------------|----------|----------|-------------------------------------------|
+| `HA_URL`    | yes      | —        | Base URL of your Home Assistant instance  |
+| `HA_TOKEN`  | yes      | —        | Long-lived access token                   |
+| `TRANSPORT` | no       | `stdio`  | Transport mode: `stdio` or `sse`          |
+| `PORT`      | no       | `8765`   | HTTP port when `TRANSPORT=sse`            |
+
+---
+
 ## Running the Server
 
 ### Directly with uv
@@ -125,7 +136,7 @@ Common `HA_URL` formats:
 uv run ha-mcp
 ```
 
-The server communicates over **stdio** and is meant to be launched by an MCP client (like Claude Code), not run manually in a terminal for day-to-day use. Running it directly will start it and wait for JSON-RPC input.
+The server communicates over **stdio** by default and is meant to be launched by an MCP client (like Claude Code), not run manually in a terminal for day-to-day use.
 
 To verify the setup is working:
 
@@ -135,32 +146,17 @@ uv run python -c "from ha_mcp.server import create_server; print('OK')"
 
 ---
 
-### With Docker
+### With Docker or Podman (stdio)
 
 **Build the image:**
 
 ```bash
 docker build -t ha-mcp-server .
+# or
+podman build -t ha-mcp-server .
 ```
 
-The included `Dockerfile`:
-
-```dockerfile
-FROM python:3.14-slim
-
-WORKDIR /app
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
-
-COPY ha_mcp/ ./ha_mcp/
-
-CMD ["uv", "run", "ha-mcp"]
-```
-
-**Run the container:**
+**Run in stdio mode** (launched by the MCP client):
 
 ```bash
 docker run --rm -i \
@@ -171,45 +167,39 @@ docker run --rm -i \
 
 > The `-i` flag keeps stdin open, which is required for stdio MCP transport.
 
-**Using an env file:**
-
-```bash
-docker run --rm -i --env-file .env ha-mcp-server
-```
-
-**For Claude Code integration**, the Docker command goes into your MCP config (see [Connecting to Claude Code](#connecting-to-claude-code)).
-
----
-
-### With Podman
-
-Podman is a drop-in Docker alternative that runs rootless by default.
-
-**Build the image:**
-
-```bash
-podman build -t ha-mcp-server .
-```
-
-**Run the container:**
-
-```bash
-podman run --rm -i \
-  -e HA_URL=http://homeassistant.local:8123 \
-  -e HA_TOKEN=your_token_here \
-  ha-mcp-server
-```
-
-**Using an env file:**
-
-```bash
-podman run --rm -i --env-file .env ha-mcp-server
-```
-
-**Rootless networking note:** If your Home Assistant is on the local network and you are running Podman rootless, you may need to use `--network=host` so the container can reach `homeassistant.local`:
+**Rootless Podman networking note:** use `--network=host` if HA is on the local network:
 
 ```bash
 podman run --rm -i --network=host --env-file .env ha-mcp-server
+```
+
+---
+
+### With Docker or Podman (SSE — persistent remote server)
+
+Run the server as a long-lived SSE service so any MCP client on the network can connect without spawning a local process.
+
+```bash
+docker run -d --name ha-mcp \
+  -p 8765:8765 \
+  -e HA_URL=http://homeassistant.local:8123 \
+  -e HA_TOKEN=your_token_here \
+  -e TRANSPORT=sse \
+  ha-mcp-server
+```
+
+The server listens on `http://0.0.0.0:8765`. Connect clients to `http://<host>:8765/sse`.
+
+**With Podman and `network_mode: host`** (recommended when HA also uses host networking):
+
+```bash
+podman run -d --name ha-mcp \
+  --network=host \
+  -e HA_URL=http://127.0.0.1:8123 \
+  -e HA_TOKEN=your_token_here \
+  -e TRANSPORT=sse \
+  -e PORT=8765 \
+  ha-mcp-server
 ```
 
 ---
@@ -308,6 +298,27 @@ Add the server to your Claude Code MCP configuration. The config file location d
         "-e", "HA_TOKEN=your_token_here",
         "ha-mcp-server"
       ]
+    }
+  }
+}
+```
+
+### Option 4: Connect to a remote SSE server
+
+If you are running the server as a persistent SSE container on another machine (e.g. a home server or NUC), connect via the CLI:
+
+```bash
+claude mcp add --transport sse home-assistant http://192.168.1.250:8765/sse
+```
+
+Or add it manually to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "home-assistant": {
+      "type": "sse",
+      "url": "http://192.168.1.250:8765/sse"
     }
   }
 }

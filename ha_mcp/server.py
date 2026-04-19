@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -85,9 +85,12 @@ async def app_lifespan(app: FastMCP) -> AsyncIterator[AppState]:
         yield AppState(client=c)
 
 
-def create_server() -> FastMCP:
+def create_server(port: int = 8000) -> FastMCP:
     """
     Create and configure the FastMCP server with all Home Assistant tools registered.
+
+    Args:
+        port: TCP port for SSE transport. Ignored in stdio mode.
 
     Returns:
         Configured FastMCP server instance.
@@ -95,6 +98,8 @@ def create_server() -> FastMCP:
 
     mcp = FastMCP(
         name="home-assistant",
+        host="0.0.0.0",
+        port=port,
         lifespan=app_lifespan,
         instructions=(
             "You are connected to a Home Assistant instance. "
@@ -125,10 +130,21 @@ def create_server() -> FastMCP:
 
 
 def main() -> None:
-    """Run the Home Assistant MCP server via stdio transport."""
+    """
+    Run the Home Assistant MCP server.
 
-    server = create_server()
-    server.run(transport="stdio")
+    Reads the ``TRANSPORT`` environment variable to select the transport.
+    Defaults to ``stdio``. When set to ``sse``, binds an HTTP server on the
+    port given by ``PORT`` (default ``8765``).
+    """
+
+    raw = os.getenv("TRANSPORT", "stdio")
+    transport: Literal["stdio", "sse", "streamable-http"] = (
+        raw if raw in ("stdio", "sse", "streamable-http") else "stdio"  # type: ignore[assignment]
+    )
+    port = int(os.getenv("PORT", "8765"))
+    server = create_server(port=port)
+    server.run(transport=transport)
 
 
 if __name__ == "__main__":

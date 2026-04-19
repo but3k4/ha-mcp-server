@@ -52,10 +52,23 @@ def test_create_server_returns_fastmcp(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(server, FastMCP)
 
 
-def test_main_calls_run(monkeypatch: pytest.MonkeyPatch) -> None:
-    """main() creates the server and calls run with the stdio transport."""
+def test_main_calls_run_stdio(monkeypatch: pytest.MonkeyPatch) -> None:
+    """main() defaults to stdio transport when TRANSPORT is not set."""
 
+    monkeypatch.delenv("TRANSPORT", raising=False)
     mock_server = MagicMock()
     with patch("ha_mcp.server.create_server", return_value=mock_server):
         main()
     mock_server.run.assert_called_once_with(transport="stdio")
+
+
+def test_main_calls_run_sse(monkeypatch: pytest.MonkeyPatch) -> None:
+    """main() uses SSE transport and correct port when TRANSPORT=sse."""
+
+    monkeypatch.setenv("TRANSPORT", "sse")
+    monkeypatch.setenv("PORT", "9000")
+    mock_server = MagicMock()
+    with patch("ha_mcp.server.create_server", return_value=mock_server) as mock_create:
+        main()
+    mock_create.assert_called_once_with(port=9000)
+    mock_server.run.assert_called_once_with(transport="sse")
