@@ -1,9 +1,8 @@
 """
 MCP tools for Home Assistant Supervisor add-on management.
 
-These tools require a Supervisor-enabled installation
-(e.g. Home Assistant OS or Supervised).
-They use the Supervisor API at ``/api/hassio/``.
+These tools require a Supervisor-enabled installation (e.g. Home Assistant OS
+or Supervised). They use the Supervisor API at /api/hassio/.
 """
 
 from __future__ import annotations
@@ -31,16 +30,16 @@ def register(mcp: FastMCP) -> None:
         """
         List all available and installed Home Assistant add-ons.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Use ``get_addon_info`` to retrieve full details for a specific add-on, or
-        ``set_addon_options`` to configure one.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Use
+        get_addon_info to retrieve full details for a specific add-on, or
+        set_addon_options to configure one.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of add-on summary objects with ``slug``, ``name``, ``state``,
-            ``version``, ``version_latest``, and ``update_available``.
+            List of add-on summary objects with slug, name, state, version,
+            version_latest, and update_available.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -55,18 +54,18 @@ def register(mcp: FastMCP) -> None:
         """
         Get detailed information about a specific add-on.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Use ``get_addon_logs`` to inspect runtime output, or ``set_addon_options``
-        to change configuration.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Use
+        get_addon_logs to inspect runtime output, or set_addon_options to
+        change configuration.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            addon_slug: Add-on slug identifier, e.g. ``core_mosquitto``
-                or ``a0d7b954_vscode``.
+            addon_slug: Add-on slug identifier, e.g. core_mosquitto or
+                        a0d7b954_vscode.
 
         Returns:
-            Detailed add-on info including version, state, options,
-            ports, and ingress config.
+            Detailed add-on info including version, state, options, ports, and
+            ingress config.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -87,7 +86,7 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            addon_slug: Add-on slug to install, e.g. ``core_ssh``.
+            addon_slug: Add-on slug to install, e.g. core_ssh.
 
         Returns:
             Confirmation message.
@@ -228,8 +227,8 @@ def register(mcp: FastMCP) -> None:
         Fetch the stdout/stderr logs for a specific add-on.
 
         Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Returns an empty string if the add-on has never started or has no
-        log output.
+        Returns an empty string if the add-on has never started or has no log
+        output.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -247,19 +246,22 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_addon_options(
-        ctx: Context, addon_slug: str, options: dict[str, Any]
+        ctx: Context,
+        addon_slug: str,
+        options: dict[str, Any]
     ) -> str:
         """
         Update configuration options for a Home Assistant add-on.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        The add-on must be restarted after updating options for changes to take
-        effect. Use ``get_addon_info`` to inspect the current ``options`` schema.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). The
+        add-on must be restarted after updating options for changes to take
+        effect. Use get_addon_info to inspect the current options schema.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to configure.
-            options: Dictionary of option keys and values specific to the add-on.
+            options: Dictionary of option keys and values specific to the
+                     add-on.
 
         Returns:
             Confirmation message.
@@ -286,8 +288,7 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of repository objects with ``slug``, ``name``,
-            ``source``, and ``maintainer``.
+            List of repository objects with slug, name, source, and maintainer.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -308,8 +309,8 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            repository_url: Git URL of the repository,
-                e.g. ``https://github.com/owner/repo``.
+            repository_url: Git URL of the repository, e.g.
+                            https://github.com/owner/repo.
 
         Returns:
             Confirmation message.

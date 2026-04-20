@@ -24,9 +24,13 @@ def tools() -> dict[str, Any]:
 
 
 async def test_get_error_log(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_error_log fetches the HA error log from /api/error_log as a plain string."""
+    """
+    get_error_log fetches the HA error log from /api/error_log as a plain string.
+    """
 
     mock_client.get.return_value = "2024-01-01 ERROR something went wrong"
     result = await tools["get_error_log"](ctx=mock_ctx)
@@ -35,7 +39,9 @@ async def test_get_error_log(
 
 
 async def test_get_supervisor_logs(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_supervisor_logs fetches Supervisor logs from the Hassio API."""
 
@@ -46,7 +52,9 @@ async def test_get_supervisor_logs(
 
 
 async def test_get_core_logs(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_core_logs fetches HA core logs from the Hassio API."""
 
@@ -57,7 +65,9 @@ async def test_get_core_logs(
 
 
 async def test_get_host_logs(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_host_logs fetches host OS logs from the Hassio API."""
 
@@ -68,7 +78,9 @@ async def test_get_host_logs(
 
 
 async def test_get_multicast_logs(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_multicast_logs fetches multicast add-on logs from the Hassio API."""
 
@@ -79,7 +91,9 @@ async def test_get_multicast_logs(
 
 
 async def test_get_error_log_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_error_log returns an error string when the API call fails."""
 
@@ -90,7 +104,9 @@ async def test_get_error_log_error(
 
 
 async def test_get_supervisor_logs_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_supervisor_logs returns an error string when the API call fails."""
 
@@ -101,7 +117,9 @@ async def test_get_supervisor_logs_error(
 
 
 async def test_get_core_logs_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_core_logs returns an error string when the API call fails."""
 
@@ -112,7 +130,9 @@ async def test_get_core_logs_error(
 
 
 async def test_get_host_logs_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_host_logs returns an error string when the API call fails."""
 
@@ -123,7 +143,9 @@ async def test_get_host_logs_error(
 
 
 async def test_get_multicast_logs_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_multicast_logs returns an error string when the API call fails."""
 

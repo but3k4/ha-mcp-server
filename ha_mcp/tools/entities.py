@@ -37,24 +37,24 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_entities(
-        ctx: Context, domain: str | None = None
+        ctx: Context,
+        domain: str | None = None
     ) -> list[dict[str, Any]] | str:
         """
         List all Home Assistant entities, optionally filtered by domain.
 
-        Returns raw state objects from the HA state machine. Each object includes
-        the full ``attributes`` dict, which may contain ``friendly_name``, unit of
-        measurement, device class, and other domain-specific metadata. When
-        ``domain`` is provided only entities whose ``entity_id`` starts with
-        ``<domain>.`` are returned.
+        Returns raw state objects from the HA state machine. Each object
+        includes the full attributes dict, which may contain friendly_name,
+        unit of measurement, device class, and other domain-specific metadata.
+        When domain is provided only entities whose entity_id starts with
+        <domain>. are returned.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            domain: Optional domain filter, e.g. ``light``, ``switch``, ``sensor``.
+            domain: Optional domain filter, e.g. light, switch, sensor.
 
         Returns:
-            A list of entity state objects with ``entity_id``, ``state``,
-            and ``attributes``.
+            A list of entity state objects with entity_id, state, and attributes.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -78,11 +78,11 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Full entity ID, e.g. ``light.living_room``.
+            entity_id: Full entity ID, e.g. light.living_room.
 
         Returns:
-            Entity state object with ``entity_id``, ``state``,
-            ``attributes``, and timestamps.
+            Entity state object with entity_id, state, attributes, and
+            timestamps.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -102,17 +102,18 @@ def register(mcp: FastMCP) -> None:
         Directly set the state and attributes of an entity in the HA state machine.
 
         This is a low-level write to the state machine and does **not** send a
-        command to the underlying device. For physical devices (lights, switches,
-        thermostats, etc.) use ``call_service`` instead. For input helpers prefer
-        the dedicated ``set_input_boolean``, ``set_input_number``, and related
-        tools over this one. This tool is primarily useful for writing arbitrary
-        state to virtual entities that have no dedicated service.
+        command to the underlying device. For physical devices (lights,
+        switches, thermostats, etc.) use call_service instead. For input
+        helpers prefer the dedicated set_input_boolean, set_input_number, and
+        related tools over this one. This tool is primarily useful for writing
+        arbitrary state to virtual entities that have no dedicated service.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Full entity ID, e.g. ``input_boolean.vacation_mode``.
-            state: New state string, e.g. ``on``, ``off``, ``home``.
-            attributes: Optional dictionary of attributes to set alongside the state.
+            entity_id: Full entity ID, e.g. input_boolean.vacation_mode.
+            state: New state string, e.g. on, off, home.
+            attributes: Optional dictionary of attributes to set alongside the
+                        state.
 
         Returns:
             The updated entity state object.
@@ -138,17 +139,17 @@ def register(mcp: FastMCP) -> None:
         Call a Home Assistant service.
 
         This is the primary way to control physical devices. Services are the
-        correct mechanism for turning devices on/off, adjusting
-        brightness, setting thermostat temperatures, running scripts, triggering
-        automations, and so on. Use ``list_services`` to discover available
+        correct mechanism for turning devices on/off, adjusting brightness,
+        setting thermostat temperatures, running scripts, triggering
+        automations, and so on. Use list_services to discover available
         domain/service combinations and their accepted parameters.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            domain: Service domain, e.g. ``light``, ``switch``, ``climate``, ``script``.
-            service: Service name, e.g. ``turn_on``, ``turn_off``, ``toggle``.
-            service_data: Optional data payload,
-                e.g. ``{"entity_id": "light.kitchen", "brightness": 200}``.
+            domain: Service domain, e.g. light, switch, climate, script.
+            service: Service name, e.g. turn_on, turn_off, toggle.
+            service_data: Optional data payload, e.g.
+                          {"entity_id": "light.kitchen", "brightness": 200}.
 
         Returns:
             List of entity states affected by the service call.
@@ -170,8 +171,8 @@ def register(mcp: FastMCP) -> None:
 
         The match is case-insensitive and checks all three fields. An entity is
         included if the query appears in any one of them. Entities that have no
-        ``friendly_name`` attribute are still searchable via their ``entity_id``
-        and ``state``.
+        friendly_name attribute are still searchable via their entity_id and
+        state.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -207,14 +208,15 @@ def register(mcp: FastMCP) -> None:
         """
         List all available Home Assistant services grouped by domain.
 
-        Useful for discovering what ``domain`` and ``service`` values to pass to
-        ``call_service``, and what parameters each service accepts.
+        Useful for discovering what domain and service values to pass to
+        call_service, and what parameters each service accepts.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Dictionary mapping domain names to their available services and schemas.
+            Dictionary mapping domain names to their available services and
+            schemas.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -229,14 +231,14 @@ def register(mcp: FastMCP) -> None:
         List all configured areas in Home Assistant.
 
         Areas are logical groupings of devices and entities (e.g. "Living Room",
-        "Kitchen"). The returned ``area_id`` values can be used with
-        ``list_entity_registry`` to filter entities by area.
+        "Kitchen"). The returned area_id values can be used with
+        list_entity_registry to filter entities by area.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of area objects with ``area_id`` and ``name``.
+            List of area objects with area_id and name.
         """
 
         template = (
@@ -264,19 +266,19 @@ def register(mcp: FastMCP) -> None:
         """
         List all entities with their friendly names and area assignments.
 
-        Combines live state data (for friendly names and current state) with the
-        HA template engine (for area assignments). Every entity in the state
-        machine is returned regardless of whether it belongs to an area.
+        Combines live state data (for friendly names and current state) with
+        the HA template engine (for area assignments). Every entity in the
+        state machine is returned regardless of whether it belongs to an area.
         Entities without a configured friendly name fall back to their
-        ``entity_id``. Entities not assigned to any area will have ``area_id``
-        and ``area_name`` set to ``null``.
+        entity_id. Entities not assigned to any area will have area_id and
+        area_name set to null.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of objects with ``entity_id``, ``friendly_name``, ``state``,
-            ``area_id``, and ``area_name``.
+            List of objects with entity_id, friendly_name, state, area_id, and
+            area_name.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -312,17 +314,17 @@ def register(mcp: FastMCP) -> None:
         """
         List area-assigned entities with friendly names and current state.
 
-        Unlike ``list_devices``, this tool returns **only** entities that have an
-        area assignment, which is useful for queries scoped to a room or zone. Friendly
-        names are sourced from live state. Entities without a configured friendly
-        name fall back to their ``entity_id``.
+        Unlike list_devices, this tool returns **only** entities that have an
+        area assignment, which is useful for queries scoped to a room or zone.
+        Friendly names are sourced from live state. Entities without a
+        configured friendly name fall back to their entity_id.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of objects with ``entity_id``, ``friendly_name``, ``state``,
-            ``area_id``, and ``area_name``.
+            List of objects with entity_id, friendly_name, state, area_id, and
+            area_name.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -363,20 +365,21 @@ def register(mcp: FastMCP) -> None:
         """
         Retrieve the historical state changes for an entity.
 
-        Queries the HA history API. When ``start_time`` is omitted, HA defaults
-        to the past 24 hours. Each inner list in the response corresponds to one
+        Queries the HA history API. When start_time is omitted, HA defaults to
+        the past 24 hours. Each inner list in the response corresponds to one
         entity (only one entity is requested here, so the outer list will
         normally contain a single element).
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Full entity ID, e.g. ``sensor.temperature``.
-            start_time: ISO 8601 timestamp for the start of the range,
-                e.g. ``2024-01-01T00:00:00``.
+            entity_id: Full entity ID, e.g. sensor.temperature.
+            start_time: ISO 8601 timestamp for the start of the range, e.g.
+                        2024-01-01T00:00:00.
             end_time: ISO 8601 timestamp for the end of the range.
 
         Returns:
-            List of lists of historical state objects, one inner list per entity.
+            List of lists of historical state objects, one inner list per
+            entity.
         """
 
         path = "/api/history/period"
@@ -406,7 +409,7 @@ def register(mcp: FastMCP) -> None:
         The logbook records human-readable events such as state changes,
         service calls, and automation triggers. When no filters are provided,
         HA returns entries for the past 24 hours across all entities. Filtering
-        by ``entity_id`` narrows results to events involving that specific entity.
+        by entity_id narrows results to events involving that specific entity.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -440,14 +443,14 @@ def register(mcp: FastMCP) -> None:
         Render a Jinja2 template string using Home Assistant's template engine.
 
         Gives access to the full set of HA template functions and filters
-        (``states()``, ``is_state()``, ``area_entities()``, ``now()``, etc.).
-        Useful for building dynamic queries or aggregations that aren't directly
-        exposed by other tools.
+        (states(), is_state(), area_entities(), now(), etc.).  Useful for
+        building dynamic queries or aggregations that aren't directly exposed
+        by other tools.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            template: A Jinja2 template string,
-                e.g. ``{{ states('sensor.temperature') }}``.
+            template: A Jinja2 template string, e.g.
+                      {{ states('sensor.temperature') }}.
 
         Returns:
             The rendered string result, or an error string on failure.
@@ -468,14 +471,14 @@ def register(mcp: FastMCP) -> None:
         """
         Fire a custom event on the Home Assistant event bus.
 
-        Any automation or integration listening for ``event_type`` will be
+        Any automation or integration listening for event_type will be
         triggered. This is an advanced tool intended for custom integrations and
         automations that respond to named events. Most device control should go
-        through ``call_service`` instead.
+        through call_service instead.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            event_type: Name of the event to fire, e.g. ``my_custom_event``.
+            event_type: Name of the event to fire, e.g. my_custom_event.
             event_data: Optional dictionary of data to include with the event.
 
         Returns:

@@ -17,7 +17,10 @@ async def test_get_returns_json() -> None:
     """GET request returns the parsed JSON body as a Python object."""
 
     with aioresponses() as m:
-        m.get(f"{BASE_URL}/api/states", payload=[{"entity_id": "light.kitchen"}])
+        m.get(
+            f"{BASE_URL}/api/states",
+            payload=[{"entity_id": "light.kitchen"}]
+        )
         async with HomeAssistantClient(BASE_URL, TOKEN) as client:
             result = await client.get("/api/states")
     assert result == [{"entity_id": "light.kitchen"}]
@@ -27,10 +30,14 @@ async def test_get_with_params() -> None:
     """GET request appends query parameters to the URL."""
 
     with aioresponses() as m:
-        m.get(f"{BASE_URL}/api/history/period?filter_entity_id=light.a", payload=[])
+        m.get(
+            f"{BASE_URL}/api/history/period?filter_entity_id=light.a",
+            payload=[]
+        )
         async with HomeAssistantClient(BASE_URL, TOKEN) as client:
             result = await client.get(
-                "/api/history/period", params={"filter_entity_id": "light.a"}
+                "/api/history/period",
+                params={"filter_entity_id": "light.a"}
             )
     assert result == []
 
@@ -50,7 +57,9 @@ async def test_get_non_json_returns_text() -> None:
 
 
 async def test_get_401_raises_error() -> None:
-    """A 401 response raises HomeAssistantError with the status code in the message."""
+    """
+    A 401 response raises HomeAssistantError with the status code in the message.
+    """
 
     with aioresponses() as m:
         m.get(f"{BASE_URL}/api/states", status=401, body="Unauthorized")
@@ -60,10 +69,14 @@ async def test_get_401_raises_error() -> None:
 
 
 async def test_get_404_raises_error() -> None:
-    """A 404 response raises HomeAssistantError with the status code in the message."""
+    """
+    A 404 response raises HomeAssistantError with the status code in the message.
+    """
 
     with aioresponses() as m:
-        m.get(f"{BASE_URL}/api/states/light.missing", status=404, body="Not found")
+        m.get(
+            f"{BASE_URL}/api/states/light.missing", status=404, body="Not found"
+        )
         async with HomeAssistantClient(BASE_URL, TOKEN) as client:
             with pytest.raises(HomeAssistantError, match="404"):
                 await client.get("/api/states/light.missing")
@@ -112,7 +125,9 @@ async def test_delete_returns_json() -> None:
 
 
 async def test_require_session_raises_outside_context() -> None:
-    """_require_session raises RuntimeError when called outside an async context manager."""
+    """
+    _require_session raises RuntimeError when called outside an async context manager.
+    """
 
     client = HomeAssistantClient(BASE_URL, TOKEN)
     with pytest.raises(RuntimeError, match="context manager"):
@@ -120,10 +135,13 @@ async def test_require_session_raises_outside_context() -> None:
 
 
 async def test_base_url_trailing_slash_stripped() -> None:
-    """Trailing slash on base_url is stripped so request URLs are not double-slashed."""
+    """
+    Trailing slash on base_url is stripped so request URLs are not double-slashed.
+    """
 
     with aioresponses() as m:
-        # If trailing slash were kept, the URL would be "http://ha.local:8123//api/states"
+        # If trailing slash were kept, the URL would be
+        # "http://ha.local:8123//api/states"
         m.get(f"{BASE_URL}/api/states", payload=[])
         async with HomeAssistantClient(f"{BASE_URL}/", TOKEN) as client:
             await client.get("/api/states")
@@ -135,11 +153,11 @@ def _make_ws_mock(receive_side_effect: list[dict]) -> tuple[MagicMock, MagicMock
     Return (session_mock, ws_mock) wired for use with patch("aiohttp.ClientSession").
 
     Args:
-        receive_side_effect: Ordered list of dicts returned by ``receive_json``.
+        receive_side_effect: Ordered list of dicts returned by receive_json.
 
     Returns:
-        A tuple of ``(session_mock, ws_mock)`` ready to be used with
-        ``patch("aiohttp.ClientSession", return_value=session_mock)``.
+        A tuple of (session_mock, ws_mock) ready to be used with
+        patch("aiohttp.ClientSession", return_value=session_mock).
     """
     ws = MagicMock()
     ws.receive_json = AsyncMock(side_effect=receive_side_effect)
@@ -212,7 +230,9 @@ async def test_ws_command_auth_failure_raises() -> None:
 
 
 async def test_ws_command_error_result_raises() -> None:
-    """ws_command raises HomeAssistantError when the command returns success=false."""
+    """
+    ws_command raises HomeAssistantError when the command returns success=false.
+    """
 
     session, _ = _make_ws_mock(
         [
@@ -234,7 +254,9 @@ async def test_ws_command_error_result_raises() -> None:
 
 
 async def test_ws_command_unexpected_first_message_raises() -> None:
-    """ws_command raises HomeAssistantError if the first WS message is not auth_required."""
+    """
+    ws_command raises HomeAssistantError if the first WS message is not auth_required.
+    """
 
     session, _ = _make_ws_mock(
         [

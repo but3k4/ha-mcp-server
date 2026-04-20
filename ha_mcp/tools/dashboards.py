@@ -1,8 +1,8 @@
 """
 MCP tools for Home Assistant Lovelace dashboard management.
 
-All tools use the HA WebSocket API (``/api/websocket``). The Lovelace
-dashboard API is not available over REST in YAML-mode installations.
+All tools use the HA WebSocket API (/api/websocket). The Lovelace dashboard API
+is not available over REST in YAML-mode installations.
 """
 
 from __future__ import annotations
@@ -34,8 +34,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of dashboard objects, each containing ``url_path``,
-            ``title``, ``mode``, and sidebar visibility flags.
+            List of dashboard objects, each containing url_path,
+            title, mode, and sidebar visibility flags.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -46,7 +46,8 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_dashboard_config(
-        ctx: Context, url_path: str | None = None
+        ctx: Context,
+        url_path: str | None = None
     ) -> dict[str, Any] | str:
         """
         Get the full Lovelace configuration for a dashboard.
@@ -55,13 +56,13 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            url_path: Dashboard URL path, e.g. ``kiosk`` for a dashboard
-                accessible at ``/dashboard-kiosk/``.  Leave ``None`` or
-                pass ``"lovelace"`` to target the default dashboard.
+            url_path: Dashboard URL path, e.g. kiosk for a dashboard accessible
+                      at /dashboard-kiosk/. Leave None or pass "lovelace" to
+                      target the default dashboard.
 
         Returns:
-            Full dashboard config dict containing ``views`` and optional
-            ``title`` and ``background`` fields.
+            Full dashboard config dict containing views and optional title and
+            background fields.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -89,15 +90,15 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            url_path: Unique URL path for the dashboard.  HA will expose
-                it at ``/dashboard-{url_path}/``, e.g. ``tablet`` becomes
-                ``/dashboard-tablet/``.
+            url_path: Unique URL path for the dashboard.  HA will expose it at
+                      /dashboard-{url_path}/, e.g. tablet becomes
+                      /dashboard-tablet/.
             title: Human-readable title shown in the sidebar.
-            icon: Optional MDI icon name, e.g. ``mdi:tablet``.
+            icon: Optional MDI icon name, e.g. mdi:tablet.
             show_in_sidebar: Whether to display the dashboard link in the
-                sidebar.  Defaults to ``True``.
+                             sidebar. Defaults to True.
             require_admin: Restrict access to administrator accounts only.
-                Defaults to ``False``.
+                           Defaults to False.
 
         Returns:
             The created dashboard object returned by HA.
@@ -130,9 +131,9 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            config: Complete dashboard config dict, must include ``views``.
-            url_path: Dashboard URL path to update.  ``None`` or
-                ``"lovelace"`` targets the default dashboard.
+            config: Complete dashboard config dict, must include views.
+            url_path: Dashboard URL path to update. None or "lovelace" targets
+                      the default dashboard.
 
         Returns:
             Confirmation string.
@@ -165,11 +166,11 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            dashboard_id: Internal dashboard ID as returned by ``list_dashboards``
-                (the ``id`` field, not ``url_path``), e.g. ``dashboard_ios``.
+            dashboard_id: Internal dashboard ID as returned by list_dashboards
+                          (the id field, not url_path), e.g. dashboard_ios.
             title: New display title.
-            url_path: New URL slug, e.g. ``dashboard-tablet``.
-            icon: MDI icon string, e.g. ``mdi:tablet``.
+            url_path: New URL slug, e.g. dashboard-tablet.
+            icon: MDI icon string, e.g. mdi:tablet.
             show_in_sidebar: Whether the dashboard appears in the sidebar.
             require_admin: Whether the dashboard requires admin access.
 
@@ -207,8 +208,8 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             dashboard_id: The internal dashboard ID as returned by
-                ``list_dashboards``, e.g. ``dashboard_tablet``.  Note that
-                this is the ``id`` field, not the ``url_path``.
+                          list_dashboards, e.g. dashboard_tablet. Note that
+                          this is the id field, not the url_path.
 
         Returns:
             Confirmation string.

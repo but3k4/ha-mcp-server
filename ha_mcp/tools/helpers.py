@@ -1,8 +1,8 @@
 """
 MCP tools for Home Assistant input helpers and timers.
 
-Covers the ``input_boolean``, ``input_number``, ``input_select``,
-``input_text``, ``input_datetime``, ``input_button``, and ``timer`` domains.
+Covers the input_boolean, input_number, input_select, input_text,
+input_datetime, input_button, and timer domains.
 """
 
 from __future__ import annotations
@@ -37,19 +37,20 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_input_helpers(
-        ctx: Context, domain: str | None = None
+        ctx: Context,
+        domain: str | None = None
     ) -> list[dict[str, Any]] | str:
         """
         List Home Assistant input helper and timer entities.
 
-        Returns entities from the virtual-device domains: ``input_boolean``,
-        ``input_button``, ``input_datetime``, ``input_number``,
-        ``input_select``, ``input_text``, and ``timer``. When ``domain`` is
-        provided only entities of that specific type are returned.
+        Returns entities from the virtual-device domains: input_boolean,
+        input_button, input_datetime, input_number, input_select, input_text,
+        and timer. When domain is provided only entities of that specific type
+        are returned.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            domain: Optional domain filter, e.g. ``input_boolean`` or ``timer``.
+            domain: Optional domain filter, e.g. input_boolean or timer.
 
         Returns:
             List of entity state objects for the matching helper domains.
@@ -68,20 +69,22 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_input_boolean(
-        ctx: Context, entity_id: str, state: str
+        ctx: Context,
+        entity_id: str,
+        state: str
     ) -> list[dict[str, Any]] | str:
         """
-        Turn an ``input_boolean`` helper on or off.
+        Turn an input_boolean helper on or off.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Input boolean entity ID,
-                e.g. ``input_boolean.vacation_mode``.
-            state: Target state. Must be ``"on"`` or ``"off"``.
+            entity_id: Input boolean entity ID, e.g.
+                       input_boolean.vacation_mode.
+            state: Target state. Must be "on" or "off".
 
         Returns:
-            List of affected entity states, or an error string if ``state``
-            is invalid or the API call fails.
+            List of affected entity states, or an error string if state is
+            invalid or the API call fails.
         """
 
         if state not in ("on", "off"):
@@ -99,20 +102,21 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_input_number(
-        ctx: Context, entity_id: str, value: float
+        ctx: Context,
+        entity_id: str,
+        value: float
     ) -> list[dict[str, Any]] | str:
         """
-        Set the numeric value of an ``input_number`` helper.
+        Set the numeric value of an input_number helper.
 
         The value must be within the min/max range configured for the entity.
-        Use ``get_entity`` to inspect the ``min``, ``max``, and ``step``
-        attributes before calling this. HA enforces the range server-side and
-        will return an error if the value is out of bounds.
+        Use get_entity to inspect the min, max, and step attributes before
+        calling this. HA enforces the range server-side and will return an
+        error if the value is out of bounds.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Input number entity ID,
-                e.g. ``input_number.target_temp``.
+            entity_id: Input number entity ID, e.g. input_number.target_temp.
             value: New numeric value.
 
         Returns:
@@ -130,21 +134,22 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_input_select(
-        ctx: Context, entity_id: str, option: str
+        ctx: Context,
+        entity_id: str,
+        option: str
     ) -> list[dict[str, Any]] | str:
         """
-        Select an option on an ``input_select`` helper.
+        Select an option on an input_select helper.
 
         The option must exactly match one of the values listed in the entity's
-        ``options`` attribute (case-sensitive). Use ``get_entity`` to retrieve
-        the available options first. HA will return an error if the option does
+        options attribute (case-sensitive). Use get_entity to retrieve the
+        available options first. HA will return an error if the option does
         not exist in the configured list.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Input select entity ID,
-                e.g. ``input_select.preset_mode``.
-            option: Option string to select, e.g. ``"Away"``.
+            entity_id: Input select entity ID, e.g. input_select.preset_mode.
+            option: Option string to select, e.g. "Away".
 
         Returns:
             List of affected entity states.
@@ -161,18 +166,19 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_input_text(
-        ctx: Context, entity_id: str, value: str
+        ctx: Context,
+        entity_id: str,
+        value: str
     ) -> list[dict[str, Any]] | str:
         """
-        Set the text value of an ``input_text`` helper.
+        Set the text value of an input_text helper.
 
         The value must satisfy the min/max length and optional pattern
         constraints configured for the entity.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Input text entity ID,
-                e.g. ``input_text.welcome_message``.
+            entity_id: Input text entity ID, e.g. input_text.welcome_message.
             value: New text value.
 
         Returns:
@@ -197,22 +203,20 @@ def register(mcp: FastMCP) -> None:
         datetime_str: str | None = None,
     ) -> list[dict[str, Any]] | str:
         """
-        Set the value of an ``input_datetime`` helper.
+        Set the value of an input_datetime helper.
 
-        Supply whichever of ``date``, ``time``, or ``datetime_str`` matches
-        the entity's configured mode: ``date`` for date-only, ``time`` for
-        time-only, ``datetime_str`` for combined date+time. Check the
-        entity's ``has_date`` and ``has_time`` attributes via ``get_entity``
-        to determine the mode. Passing a field the entity does not support
-        will be silently ignored by Home Assistant.
+        Supply whichever of date, time, or datetime_str matches the entity's
+        configured mode: date for date-only, time for time-only, datetime_str
+        for combined date+time. Check the entity's has_date and has_time
+        attributes via get_entity to determine the mode. Passing a field the
+        entity does not support will be silently ignored by Home Assistant.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Input datetime entity ID,
-                e.g. ``input_datetime.alarm_time``.
-            date: Date string in ``YYYY-MM-DD`` format.
-            time: Time string in ``HH:MM:SS`` format.
-            datetime_str: Combined datetime in ``YYYY-MM-DD HH:MM:SS`` format.
+            entity_id: Input datetime entity ID, e.g. input_datetime.alarm_time.
+            date: Date string in YYYY-MM-DD format.
+            time: Time string in HH:MM:SS format.
+            datetime_str: Combined datetime in YYYY-MM-DD HH:MM:SS format.
 
         Returns:
             List of affected entity states.
@@ -241,16 +245,16 @@ def register(mcp: FastMCP) -> None:
         duration: str | None = None,
     ) -> list[dict[str, Any]] | str:
         """
-        Start or restart a ``timer`` entity.
+        Start or restart a timer entity.
 
-        If ``duration`` is omitted the timer uses its configured default
-        duration. Calling start on an already-running timer restarts it.
+        If duration is omitted the timer uses its configured default duration.
+        Calling start on an already-running timer restarts it.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Timer entity ID, e.g. ``timer.cooking``.
-            duration: Optional override duration in ``HH:MM:SS`` or ``SS``
-                format, e.g. ``"00:05:00"`` for five minutes.
+            entity_id: Timer entity ID, e.g. timer.cooking.
+            duration: Optional override duration in HH:MM:SS or SS format, e.g.
+                      "00:05:00" for five minutes.
 
         Returns:
             List of affected entity states.
@@ -269,13 +273,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def pause_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]] | str:
         """
-        Pause a running ``timer`` entity.
+        Pause a running timer entity.
 
-        The remaining time is preserved. Use ``start_timer`` to resume.
+        The remaining time is preserved. Use start_timer to resume.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Timer entity ID, e.g. ``timer.cooking``.
+            entity_id: Timer entity ID, e.g. timer.cooking.
 
         Returns:
             List of affected entity states.
@@ -292,14 +296,14 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def cancel_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]] | str:
         """
-        Cancel a running or paused ``timer`` entity.
+        Cancel a running or paused timer entity.
 
-        The timer is reset to its configured duration. No ``timer.finished``
-        event is fired.
+        The timer is reset to its configured duration. No timer.finished event
+        is fired.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Timer entity ID, e.g. ``timer.cooking``.
+            entity_id: Timer entity ID, e.g. timer.cooking.
 
         Returns:
             List of affected entity states.

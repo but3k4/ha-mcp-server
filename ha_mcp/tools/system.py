@@ -29,8 +29,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Config object including ``version``, ``location_name``, ``latitude``,
-            ``longitude``, ``unit_system``, ``time_zone``, ``components``, and more.
+            Config object including version, location_name, latitude,
+            longitude, unit_system, time_zone, components, and more.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -48,9 +48,9 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Validation result with ``result`` (``"valid"`` or ``"invalid"``) and
-            an ``errors`` list of human-readable strings describing each problem,
-            including YAML parse errors and unknown keys.
+            Validation result with result ("valid" or "invalid") and an errors
+            list of human-readable strings describing each problem, including
+            YAML parse errors and unknown keys.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -83,15 +83,16 @@ def register(mcp: FastMCP) -> None:
         """
         Get Supervisor system information including version and update status.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Use the returned ``version_latest`` field to decide whether to call
-        ``update_supervisor``.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Use
+        the returned version_latest field to decide whether to call
+        update_supervisor.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Supervisor info dict with versions, channel, and update availability.
+            Supervisor info dict with versions, channel, and update
+            availability.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -108,9 +109,8 @@ def register(mcp: FastMCP) -> None:
         """
         Get Home Assistant Core process information via the Supervisor.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Use the returned ``version_latest`` field to decide whether to call
-        ``update_core``.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Use
+        the returned version_latest field to decide whether to call update_core.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -156,9 +156,8 @@ def register(mcp: FastMCP) -> None:
         """
         Get Home Assistant OS information and update status.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Use the returned ``version_latest`` field to decide whether to call
-        ``update_os``.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Use
+        the returned version_latest field to decide whether to call update_os.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -179,8 +178,8 @@ def register(mcp: FastMCP) -> None:
         """
         Update the Home Assistant Core to the latest available version.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Call ``get_core_info`` first to confirm an update is available.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Call
+        get_core_info first to confirm an update is available.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -203,8 +202,8 @@ def register(mcp: FastMCP) -> None:
         """
         Update the Home Assistant Supervisor to the latest version.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Call ``get_supervisor_info`` first to confirm an update is available.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Call
+        get_supervisor_info first to confirm an update is available.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -227,8 +226,8 @@ def register(mcp: FastMCP) -> None:
         """
         Update the Home Assistant OS to the latest version.
 
-        Requires a Supervisor-enabled installation (HA OS or Supervised).
-        Call ``get_os_info`` first to confirm an update is available.
+        Requires a Supervisor-enabled installation (HA OS or Supervised). Call
+        get_os_info first to confirm an update is available.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -255,8 +254,7 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of integration config entries with ``domain``,
-            ``title``, and ``state``.
+            List of integration config entries with domain, title, and state.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -271,12 +269,12 @@ def register(mcp: FastMCP) -> None:
         Reload a specific integration config entry without restarting HA.
 
         Returns an error string if the integration does not support reloading
-        (not all integrations are reloadable). Use ``list_integrations`` to
-        obtain the ``entry_id``.
+        (not all integrations are reloadable). Use list_integrations to obtain
+        the entry_id.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entry_id: The config entry ID to reload (from ``list_integrations``).
+            entry_id: The config entry ID to reload (from list_integrations).
 
         Returns:
             Confirmation message.
@@ -318,7 +316,7 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of user objects with ``id``, ``name``, ``is_active``, and ``is_admin``.
+            List of user objects with id, name, is_active, and is_admin.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -361,8 +359,7 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of backup objects with ``slug``, ``name``, ``date``,
-            ``size``, and ``type``.
+            List of backup objects with slug, name, date, size, and type.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client

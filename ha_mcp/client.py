@@ -1,10 +1,10 @@
 """
 Async HTTP client for the Home Assistant REST and Supervisor APIs.
 
-Wraps aiohttp with auth headers and consistent error handling. Also
-provides :meth:`HomeAssistantClient.ws_command` for one-shot WebSocket
-commands, which is required for APIs (such as Lovelace dashboard
-management) that are not available over REST in YAML-mode installations.
+Wraps aiohttp with auth headers and consistent error handling. Also provides
+:meth: HomeAssistantClient.ws_command for one-shot WebSocket commands, which
+is required for APIs (such as Lovelace dashboard management) that are not
+available over REST in YAML-mode installations.
 """
 
 from __future__ import annotations
@@ -58,7 +58,8 @@ class HomeAssistantClient:
     Async client for the Home Assistant REST and Supervisor APIs.
 
     Args:
-        base_url: Base URL of the Home Assistant instance, e.g. ``http://homeassistant.local:8123``.
+        base_url: Base URL of the Home Assistant instance, e.g.
+                  http://homeassistant.local:8123.
         token: Long-lived access token generated in HA profile settings.
 
     Example:
@@ -100,7 +101,8 @@ class HomeAssistantClient:
             The active aiohttp.ClientSession.
 
         Raises:
-            RuntimeError: If the client is used outside of an async context manager.
+            RuntimeError: If the client is used outside of an async context
+                          manager.
         """
 
         if self._session is None:
@@ -115,7 +117,7 @@ class HomeAssistantClient:
         Perform a GET request against the HA API.
 
         Args:
-            path: API path, e.g. ``/api/states``.
+            path: API path, e.g. /api/states.
             params: Optional query parameters.
 
         Returns:
@@ -136,7 +138,7 @@ class HomeAssistantClient:
         Perform a POST request against the HA API.
 
         Args:
-            path: API path, e.g. ``/api/services/light/turn_on``.
+            path: API path, e.g. /api/services/light/turn_on.
             payload: Optional JSON body.
 
         Returns:
@@ -158,28 +160,30 @@ class HomeAssistantClient:
 
         Opens a fresh WebSocket connection for each call, completes the HA
         auth handshake, sends one command message, waits for the matching
-        result, then closes the connection.  Unlike the HTTP methods this
+        result, then closes the connection. Unlike the HTTP methods this
         does *not* require the client to be used as an async context manager.
 
         Args:
-            msg_type: HA WebSocket command type, e.g. ``lovelace/config``
-                or ``lovelace/dashboards/list``.
-            **kwargs: Additional fields merged into the command message,
-                e.g. ``url_path="my-dash"`` or ``config={...}``.
+            msg_type: HA WebSocket command type, e.g. lovelace/config or
+                      lovelace/dashboards/list.
+            **kwargs: Additional fields merged into the command message, e.g.
+                      url_path="my-dash" or config={...}.
 
         Returns:
-            The ``result`` field from the HA response message.  May be
-            ``None`` for commands that return no data (e.g. config/save).
+            The result field from the HA response message. May be None for
+            commands that return no data (e.g. config/save).
 
         Raises:
             HomeAssistantError: If authentication is rejected or the command
-                returns ``success: false``.
+                                returns success: false.
         """
 
         parsed = urlparse(self._base_url)
         scheme = "wss" if parsed.scheme == "https" else "ws"
         ws_url = urlunparse(
-            parsed._replace(scheme=scheme, path=_WEBSOCKET_PATH, query="", fragment="")
+            parsed._replace(
+                scheme=scheme, path=_WEBSOCKET_PATH, query="", fragment=""
+            )
         )
 
         async with aiohttp.ClientSession() as session, session.ws_connect(ws_url) as ws:
@@ -192,7 +196,9 @@ class HomeAssistantClient:
             await ws.send_json({"type": "auth", "access_token": self._token})
             auth_msg = await ws.receive_json()
             if auth_msg.get("type") != "auth_ok":
-                raise HomeAssistantError(f"WebSocket authentication failed: {auth_msg}")
+                raise HomeAssistantError(
+                    f"WebSocket authentication failed: {auth_msg}"
+                )
 
             cmd_id = 1
             await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})

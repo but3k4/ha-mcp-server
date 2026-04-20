@@ -43,9 +43,13 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_entities_all(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_entities returns all states from /api/states when no domain filter is given."""
+    """
+    list_entities returns all states from /api/states when no domain filter is given.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_entities"](ctx=mock_ctx)
@@ -54,9 +58,14 @@ async def test_list_entities_all(
 
 
 async def test_list_entities_domain_filter(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_entities filters results to only entities matching the given domain prefix."""
+    """
+    list_entities filters results to only entities matching the given domain
+    prefix.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_entities"](ctx=mock_ctx, domain="light")
@@ -65,9 +74,13 @@ async def test_list_entities_domain_filter(
 
 
 async def test_list_entities_no_match(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_entities returns an empty list when no entity matches the given domain."""
+    """
+    list_entities returns an empty list when no entity matches the given domain.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_entities"](ctx=mock_ctx, domain="climate")
@@ -75,9 +88,14 @@ async def test_list_entities_no_match(
 
 
 async def test_get_entity(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_entity fetches a single entity state by entity_id from /api/states/{entity_id}."""
+    """
+    get_entity fetches a single entity state by entity_id from
+    /api/states/{entity_id}.
+    """
 
     mock_client.get.return_value = _STATES[0]
     result = await tools["get_entity"](ctx=mock_ctx, entity_id="light.kitchen")
@@ -86,9 +104,14 @@ async def test_get_entity(
 
 
 async def test_set_entity_state(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """set_entity_state POSTs state and empty attributes to /api/states/{entity_id}."""
+    """
+    set_entity_state POSTs state and empty attributes to
+    /api/states/{entity_id}.
+    """
 
     expected = {
         "entity_id": "input_boolean.vacation_mode",
@@ -107,7 +130,9 @@ async def test_set_entity_state(
 
 
 async def test_set_entity_state_with_attributes(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_entity_state merges custom attributes into the POST payload."""
 
@@ -125,7 +150,9 @@ async def test_set_entity_state_with_attributes(
 
 
 async def test_call_service(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     call_service POSTs to /api/services/{domain}/{service} with service_data
@@ -147,7 +174,9 @@ async def test_call_service(
 
 
 async def test_call_service_no_data(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     call_service sends an empty dict as service_data when no service_data
@@ -164,7 +193,9 @@ async def test_call_service_no_data(
 
 
 async def test_search_entities_by_entity_id(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against entity_id fields."""
 
@@ -175,7 +206,9 @@ async def test_search_entities_by_entity_id(
 
 
 async def test_search_entities_by_friendly_name(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against the friendly_name attribute."""
 
@@ -186,7 +219,9 @@ async def test_search_entities_by_friendly_name(
 
 
 async def test_search_entities_by_state(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """search_entities matches the keyword against the state value."""
 
@@ -197,7 +232,9 @@ async def test_search_entities_by_state(
 
 
 async def test_search_entities_case_insensitive(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """search_entities matching is case-insensitive."""
 
@@ -207,9 +244,13 @@ async def test_search_entities_case_insensitive(
 
 
 async def test_search_entities_no_match(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """search_entities returns an empty list when no entity matches the keyword."""
+    """
+    search_entities returns an empty list when no entity matches the keyword.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["search_entities"](ctx=mock_ctx, query="zzznomatch")
@@ -222,7 +263,9 @@ _AREA_ENTRIES: list[dict[str, Any]] = [
 
 
 async def test_list_devices_merges_area_and_state(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     list_devices merges area info into each entity's state dict. Unassigned
@@ -245,9 +288,13 @@ async def test_list_devices_merges_area_and_state(
 
 
 async def test_list_devices_area_result_as_list(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_devices handles area_result already parsed as a list (not a JSON string)."""
+    """
+    list_devices handles area_result already parsed as a list (not a JSON string).
+    """
 
     mock_client.post.return_value = _AREA_ENTRIES
     mock_client.get.return_value = _STATES
@@ -257,7 +304,9 @@ async def test_list_devices_area_result_as_list(
 
 
 async def test_list_entity_registry_only_area_entities(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     list_entity_registry returns entities with area info and friendly_name
@@ -275,7 +324,9 @@ async def test_list_entity_registry_only_area_entities(
 
 
 async def test_list_services(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_services returns the raw services dict from /api/services."""
 
@@ -287,9 +338,13 @@ async def test_list_services(
 
 
 async def test_list_areas_json_string(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_areas parses the response when the API returns areas as a JSON string."""
+    """
+    list_areas parses the response when the API returns areas as a JSON string.
+    """
 
     areas = [{"area_id": "kitchen", "name": "Kitchen"}]
     mock_client.post.return_value = json.dumps(areas)
@@ -298,9 +353,13 @@ async def test_list_areas_json_string(
 
 
 async def test_list_areas_already_list(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_areas passes through the response unchanged when it is already a list."""
+    """
+    list_areas passes through the response unchanged when it is already a list.
+    """
 
     areas = [{"area_id": "kitchen", "name": "Kitchen"}]
     mock_client.post.return_value = areas
@@ -309,7 +368,9 @@ async def test_list_areas_already_list(
 
 
 async def test_get_entity_history_no_times(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     get_entity_history fetches from /api/history/period with only the entity
@@ -329,9 +390,13 @@ async def test_get_entity_history_no_times(
 
 
 async def test_get_entity_history_with_start(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_entity_history includes start_time in the URL path when provided."""
+    """
+    get_entity_history includes start_time in the URL path when provided.
+    """
 
     mock_client.get.return_value = [[]]
     await tools["get_entity_history"](
@@ -346,7 +411,9 @@ async def test_get_entity_history_with_start(
 
 
 async def test_get_entity_history_with_end(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     get_entity_history passes end_time as a query param alongside start_time
@@ -370,9 +437,13 @@ async def test_get_entity_history_with_end(
 
 
 async def test_get_logbook_no_filters(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_logbook fetches /api/logbook with no params when no arguments are provided."""
+    """
+    get_logbook fetches /api/logbook with no params when no arguments are provided.
+    """
 
     entries = [{"name": "Kitchen Light", "message": "turned on"}]
     mock_client.get.return_value = entries
@@ -382,7 +453,9 @@ async def test_get_logbook_no_filters(
 
 
 async def test_get_logbook_with_entity(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_logbook passes entity_id as the 'entity' query param."""
 
@@ -394,9 +467,13 @@ async def test_get_logbook_with_entity(
 
 
 async def test_get_logbook_with_time_range(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_logbook uses start_time in the URL path and end_time as a query param."""
+    """
+    get_logbook uses start_time in the URL path and end_time as a query param.
+    """
 
     mock_client.get.return_value = []
     await tools["get_logbook"](
@@ -415,7 +492,9 @@ async def test_get_logbook_with_time_range(
 
 
 async def test_render_template(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     render_template POSTs the template string to /api/template and returns
@@ -434,7 +513,9 @@ async def test_render_template(
 
 
 async def test_fire_event_no_data(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     fire_event POSTs to /api/events/{event_type} with an empty payload when no
@@ -448,7 +529,9 @@ async def test_fire_event_no_data(
 
 
 async def test_fire_event_with_data(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """fire_event POSTs event_data as the request body when provided."""
 
@@ -460,7 +543,9 @@ async def test_fire_event_with_data(
 
 
 async def test_list_entities_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_entities returns an error string when the API call fails."""
 
@@ -471,7 +556,9 @@ async def test_list_entities_error(
 
 
 async def test_get_entity_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_entity returns an error string when the API call fails."""
 
@@ -482,7 +569,9 @@ async def test_get_entity_error(
 
 
 async def test_set_entity_state_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_entity_state returns an error string when the API call fails."""
 
@@ -495,7 +584,9 @@ async def test_set_entity_state_error(
 
 
 async def test_call_service_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """call_service returns an error string when the API call fails."""
 
@@ -508,7 +599,9 @@ async def test_call_service_error(
 
 
 async def test_search_entities_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """search_entities returns an error string when the API call fails."""
 
@@ -519,7 +612,9 @@ async def test_search_entities_error(
 
 
 async def test_list_services_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_services returns an error string when the API call fails."""
 
@@ -530,7 +625,9 @@ async def test_list_services_error(
 
 
 async def test_list_areas_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_areas returns an error string when the API call fails."""
 
@@ -541,7 +638,9 @@ async def test_list_areas_error(
 
 
 async def test_list_devices_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_devices returns an error string when the API call fails."""
 
@@ -552,9 +651,13 @@ async def test_list_devices_error(
 
 
 async def test_list_entity_registry_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_entity_registry returns an error string when the API call fails."""
+    """
+    list_entity_registry returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
     result = await tools["list_entity_registry"](ctx=mock_ctx)
@@ -563,7 +666,9 @@ async def test_list_entity_registry_error(
 
 
 async def test_get_entity_history_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_entity_history returns an error string when the API call fails."""
 
@@ -576,7 +681,9 @@ async def test_get_entity_history_error(
 
 
 async def test_get_logbook_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_logbook returns an error string when the API call fails."""
 
@@ -587,7 +694,9 @@ async def test_get_logbook_error(
 
 
 async def test_render_template_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """render_template returns an error string when the API call fails."""
 
@@ -600,11 +709,15 @@ async def test_render_template_error(
 
 
 async def test_fire_event_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """fire_event returns an error string when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["fire_event"](ctx=mock_ctx, event_type="my_custom_event")
+    result = await tools["fire_event"](
+        ctx=mock_ctx, event_type="my_custom_event"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")

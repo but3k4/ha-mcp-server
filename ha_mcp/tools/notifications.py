@@ -24,10 +24,10 @@ def register(mcp: FastMCP) -> None:
         List all available notification service names in Home Assistant.
 
         Queries the HA services API and returns only the service names within
-        the ``notify`` domain (e.g. ``notify``, ``mobile_app_my_phone``,
-        ``pushbullet``). Pass one of these names as the ``service`` argument
-        to ``send_notification``. Returns an empty list if no notifier
-        integration is configured in Home Assistant.
+        the notify domain (e.g. notify, mobile_app_my_phone, pushbullet). Pass
+        one of these names as the service argument to send_notification.
+        Returns an empty list if no notifier integration is configured in Home
+        Assistant.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -61,22 +61,22 @@ def register(mcp: FastMCP) -> None:
         """
         Send a notification via a Home Assistant notify service.
 
-        Use ``list_notification_services`` to discover available service names.
-        The default ``service`` value of ``"notify"`` targets the catch-all
-        notifier (usually the first configured one). For mobile push
-        notifications use the ``mobile_app_<device_name>`` service.
+        Use list_notification_services to discover available service names. The
+        default service value of "notify" targets the catch-all notifier
+        (usually the first configured one). For mobile push notifications use
+        the mobile_app_<device_name> service.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
             message: Notification body text.
             title: Optional notification title.
-            service: Notify service name, e.g. ``"notify"`` or
-                ``"mobile_app_my_phone"``.
+            service: Notify service name, e.g. "notify" or
+                     "mobile_app_my_phone".
             target: Optional list of targets (device IDs, group names) supported
-                by the chosen service.
+                    by the chosen service.
             data: Optional service-specific extra payload. For iOS/Android mobile
-                push use ``{"push": {"sound": "default"}}``. For other services
-                consult the integration docs for supported keys.
+                  push use {"push": {"sound": "default"}}. For other services
+                  consult the integration docs for supported keys.
 
         Returns:
             List of entity states affected by the service call.
@@ -104,9 +104,9 @@ def register(mcp: FastMCP) -> None:
         List all active persistent notifications shown in the HA UI bell menu.
 
         Persistent notifications remain visible in the HA frontend until
-        explicitly dismissed. Each entry has a ``notification_id`` (in the
-        ``entity_id`` as ``persistent_notification.<id>``) and ``attributes``
-        containing ``message``, ``title``, and ``created_at``.
+        explicitly dismissed. Each entry has a notification_id (in the
+        entity_id as persistent_notification.<id>) and attributes containing
+        message, title, and created_at.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -136,15 +136,15 @@ def register(mcp: FastMCP) -> None:
         Create a persistent notification in the Home Assistant UI.
 
         The notification appears in the bell menu and remains until dismissed.
-        If ``notification_id`` is provided and a notification with that ID
-        already exists, it will be replaced.
+        If notification_id is provided and a notification with that ID already
+        exists, it will be replaced.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
             message: Notification body text (supports Markdown).
             title: Optional notification title.
             notification_id: Optional stable ID for upsert behaviour. If omitted
-                HA generates a random one.
+                             HA generates a random one.
 
         Returns:
             List of entity states affected by the service call.
@@ -175,7 +175,7 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             notification_id: The notification ID (the part after
-                ``persistent_notification.`` in the entity ID).
+                             persistent_notification. in the entity ID).
 
         Returns:
             List of entity states affected by the service call.

@@ -38,9 +38,14 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_notification_services(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_notification_services returns only service names under the 'notify' domain."""
+    """
+    list_notification_services returns only service names under the 'notify'
+    domain.
+    """
 
     mock_client.get.return_value = _SERVICES
     result = await tools["list_notification_services"](ctx=mock_ctx)
@@ -50,19 +55,31 @@ async def test_list_notification_services(
 
 
 async def test_list_notification_services_no_notify_domain(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_notification_services returns an empty list when no 'notify' domain is present."""
+    """
+    list_notification_services returns an empty list when no 'notify' domain is
+    present.
+    """
 
-    mock_client.get.return_value = [{"domain": "light", "services": {"turn_on": {}}}]
+    mock_client.get.return_value = [
+        {"domain": "light", "services": {"turn_on": {}}}
+    ]
     result = await tools["list_notification_services"](ctx=mock_ctx)
     assert result == []
 
 
 async def test_send_notification_minimal(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """send_notification posts to notify/notify with only the message when no extras given."""
+    """
+    send_notification posts to notify/notify with only the message when no
+    extras given.
+    """
 
     mock_client.post.return_value = []
     await tools["send_notification"](ctx=mock_ctx, message="Hello world")
@@ -73,7 +90,9 @@ async def test_send_notification_minimal(
 
 
 async def test_send_notification_full(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     send_notification posts to the specified service with title, target, and
@@ -101,9 +120,13 @@ async def test_send_notification_full(
 
 
 async def test_list_persistent_notifications(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_persistent_notifications returns only persistent_notification.* entities."""
+    """
+    list_persistent_notifications returns only persistent_notification.* entities.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_persistent_notifications"](ctx=mock_ctx)
@@ -112,9 +135,13 @@ async def test_list_persistent_notifications(
 
 
 async def test_create_persistent_notification_minimal(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_persistent_notification posts with message only when no title or id given."""
+    """
+    create_persistent_notification posts with message only when no title or id given.
+    """
 
     mock_client.post.return_value = []
     await tools["create_persistent_notification"](
@@ -127,9 +154,13 @@ async def test_create_persistent_notification_minimal(
 
 
 async def test_create_persistent_notification_full(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_persistent_notification includes title and notification_id when provided."""
+    """
+    create_persistent_notification includes title and notification_id when provided.
+    """
 
     mock_client.post.return_value = []
     await tools["create_persistent_notification"](
@@ -149,9 +180,14 @@ async def test_create_persistent_notification_full(
 
 
 async def test_dismiss_persistent_notification(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """dismiss_persistent_notification calls the dismiss service with the notification_id."""
+    """
+    dismiss_persistent_notification calls the dismiss service with the
+    notification_id.
+    """
 
     mock_client.post.return_value = []
     await tools["dismiss_persistent_notification"](
@@ -164,9 +200,13 @@ async def test_dismiss_persistent_notification(
 
 
 async def test_list_notification_services_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_notification_services returns an error string when the API call fails."""
+    """
+    list_notification_services returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["list_notification_services"](ctx=mock_ctx)
@@ -175,9 +215,13 @@ async def test_list_notification_services_error(
 
 
 async def test_send_notification_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """send_notification returns an error string when the API call fails."""
+    """
+    send_notification returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
     result = await tools["send_notification"](ctx=mock_ctx, message="Hello")
@@ -186,9 +230,13 @@ async def test_send_notification_error(
 
 
 async def test_list_persistent_notifications_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_persistent_notifications returns an error string when the API call fails."""
+    """
+    list_persistent_notifications returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["list_persistent_notifications"](ctx=mock_ctx)
@@ -197,9 +245,13 @@ async def test_list_persistent_notifications_error(
 
 
 async def test_create_persistent_notification_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_persistent_notification returns an error string when the API call fails."""
+    """
+    create_persistent_notification returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
     result = await tools["create_persistent_notification"](
@@ -210,9 +262,13 @@ async def test_create_persistent_notification_error(
 
 
 async def test_dismiss_persistent_notification_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """dismiss_persistent_notification returns an error string when the API call fails."""
+    """
+    dismiss_persistent_notification returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
     result = await tools["dismiss_persistent_notification"](

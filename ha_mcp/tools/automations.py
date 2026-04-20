@@ -27,9 +27,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of automation state objects. Each has ``entity_id``,
-            ``state`` (``on``/``off``), and ``attributes`` with
-            ``friendly_name`` and ``last_triggered``.
+            List of automation state objects. Each has entity_id, state
+            (on/off), and attributes with friendly_name and last_triggered.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -37,18 +36,20 @@ def register(mcp: FastMCP) -> None:
             states: list[dict[str, Any]] = await client.get("/api/states")
         except HomeAssistantError as exc:
             return f"Error: {exc}"
+
         return [s for s in states if s["entity_id"].startswith("automation.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def trigger_automation(
-        ctx: Context, entity_id: str
+        ctx: Context,
+        entity_id: str
     ) -> list[dict[str, Any]] | str:
         """
         Manually trigger an automation regardless of its conditions.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Automation entity ID, e.g. ``automation.morning_lights``.
+            entity_id: Automation entity ID, e.g. automation.morning_lights.
 
         Returns:
             List of affected entity states.
@@ -65,14 +66,15 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def enable_automation(
-        ctx: Context, entity_id: str
+        ctx: Context,
+        entity_id: str
     ) -> list[dict[str, Any]] | str:
         """
         Enable a previously disabled automation.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Automation entity ID, e.g. ``automation.morning_lights``.
+            entity_id: Automation entity ID, e.g. automation.morning_lights.
 
         Returns:
             List of affected entity states.
@@ -89,7 +91,8 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def disable_automation(
-        ctx: Context, entity_id: str
+        ctx: Context,
+        entity_id: str
     ) -> list[dict[str, Any]] | str:
         """
         Disable an automation so it will not fire automatically.
@@ -139,8 +142,7 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of script state objects with ``entity_id``, ``state``,
-            and ``attributes``.
+            List of script state objects with entity_id, state, and attributes.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
@@ -148,6 +150,7 @@ def register(mcp: FastMCP) -> None:
             states: list[dict[str, Any]] = await client.get("/api/states")
         except HomeAssistantError as exc:
             return f"Error: {exc}"
+
         return [s for s in states if s["entity_id"].startswith("script.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -161,7 +164,7 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Script entity ID, e.g. ``script.goodnight``.
+            entity_id: Script entity ID, e.g. script.goodnight.
             variables: Optional variables to pass into the script.
 
         Returns:
@@ -199,14 +202,15 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def activate_scene(
-        ctx: Context, entity_id: str
+        ctx: Context,
+        entity_id: str
     ) -> list[dict[str, Any]] | str:
         """
         Activate a Home Assistant scene.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            entity_id: Scene entity ID, e.g. ``scene.movie_time``.
+            entity_id: Scene entity ID, e.g. scene.movie_time.
 
         Returns:
             List of affected entity states.

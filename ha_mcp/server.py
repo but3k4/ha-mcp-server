@@ -7,7 +7,8 @@ Usage:
     uv run ha-mcp
 
 Environment Variables:
-    HA_URL:   Base URL of the Home Assistant instance, e.g. ``http://homeassistant.local:8123``.
+    HA_URL:   Base URL of the Home Assistant instance, e.g.
+              http://homeassistant.local:8123.
     HA_TOKEN: Long-lived access token from your HA profile.
 """
 
@@ -51,11 +52,11 @@ def _load_client() -> HomeAssistantClient:
     Load HA connection settings from the environment and return a configured client.
 
     Returns:
-        A HomeAssistantClient ready for use. Call it as a context manager
-        to open the connection.
+        A HomeAssistantClient ready for use. Call it as a context manager to
+        open the connection.
 
     Raises:
-        ValueError: If ``HA_URL`` or ``HA_TOKEN`` are not set in the environment.
+        ValueError: If HA_URL or HA_TOKEN are not set in the environment.
     """
 
     load_dotenv(Path(__file__).parent.parent / ".env")
@@ -76,8 +77,8 @@ async def app_lifespan(app: FastMCP) -> AsyncIterator[AppState]:
     """
     Open a single persistent HTTP session for the server's lifetime.
 
-    Yields an :class:`AppState` whose ``client`` is already entered (session
-    open). Tools access it via ``ctx.request_context.lifespan_context.client``.
+    Yields an :class: AppState whose client is already entered (session open).
+    Tools access it via ctx.request_context.lifespan_context.client.
     """
 
     client = _load_client()
@@ -133,9 +134,9 @@ def main() -> None:
     """
     Run the Home Assistant MCP server.
 
-    Reads the ``TRANSPORT`` environment variable to select the transport.
-    Defaults to ``stdio``. When set to ``sse``, binds an HTTP server on the
-    port given by ``PORT`` (default ``8765``).
+    Reads the TRANSPORT environment variable to select the transport. Defaults
+    to stdio. When set to sse, binds an HTTP server on the port given by PORT
+    (default 8765).
     """
 
     raw = os.getenv("TRANSPORT", "stdio")

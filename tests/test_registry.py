@@ -25,8 +25,12 @@ _DEVICES: list[dict[str, Any]] = [
 ]
 
 _CONFIG_ENTRIES: list[dict[str, Any]] = [
-    {"entry_id": "entry1", "domain": "hue", "title": "Philips Hue", "state": "loaded"},
-    {"entry_id": "entry2", "domain": "cast", "title": "Google Cast", "state": "loaded"},
+    {
+        "entry_id": "entry1", "domain": "hue", "title": "Philips Hue", "state": "loaded"
+    },
+    {
+        "entry_id": "entry2", "domain": "cast", "title": "Google Cast", "state": "loaded"
+    },
 ]
 
 
@@ -40,9 +44,14 @@ def tools() -> dict[str, Any]:
 
 
 async def test_get_device_registry_list_response(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_device_registry returns the device list when the API responds with a plain list."""
+    """
+    get_device_registry returns the device list when the API responds with a plain
+    list.
+    """
 
     mock_client.get.return_value = _DEVICES
     result = await tools["get_device_registry"](ctx=mock_ctx)
@@ -51,7 +60,9 @@ async def test_get_device_registry_list_response(
 
 
 async def test_get_device_registry_dict_response(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """HA may wrap the list in a dict with a 'devices' key."""
 
@@ -61,7 +72,9 @@ async def test_get_device_registry_dict_response(
 
 
 async def test_list_config_entries(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     list_config_entries returns all config entries from
@@ -76,7 +89,9 @@ async def test_list_config_entries(
 
 
 async def test_reload_config_entry(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """reload_config_entry POSTs to the reload endpoint and returns the response dict."""
 
@@ -89,7 +104,9 @@ async def test_reload_config_entry(
 
 
 async def test_get_device_registry_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_device_registry returns an error string when the API call fails."""
 
@@ -100,7 +117,9 @@ async def test_get_device_registry_error(
 
 
 async def test_list_config_entries_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_config_entries returns an error string when the API call fails."""
 
@@ -111,7 +130,9 @@ async def test_list_config_entries_error(
 
 
 async def test_reload_config_entry_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """reload_config_entry returns an error string when the API call fails."""
 

@@ -18,7 +18,9 @@ _DASHBOARDS: list[dict[str, Any]] = [
     {"url_path": "lovelace-mobile", "title": "Mobile", "mode": "storage"},
 ]
 
-_CONFIG: dict[str, Any] = {"title": "Home", "views": [{"title": "Main", "cards": []}]}
+_CONFIG: dict[str, Any] = {
+    "title": "Home", "views": [{"title": "Main", "cards": []}]
+}
 
 
 @pytest.fixture
@@ -31,7 +33,9 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_dashboards(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_dashboards calls lovelace/dashboards/list and returns the result."""
 
@@ -43,9 +47,13 @@ async def test_list_dashboards(
 
 
 async def test_get_dashboard_config_default(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_dashboard_config fetches the default dashboard when url_path is None."""
+    """
+    get_dashboard_config fetches the default dashboard when url_path is None.
+    """
 
     mock_client.ws_command.return_value = _CONFIG
     result = await tools["get_dashboard_config"](ctx=mock_ctx)
@@ -54,19 +62,29 @@ async def test_get_dashboard_config_default(
 
 
 async def test_get_dashboard_config_named(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_dashboard_config passes url_path for non-default dashboards."""
+    """
+    get_dashboard_config passes url_path for non-default dashboards.
+    """
 
     mock_client.ws_command.return_value = _CONFIG
     await tools["get_dashboard_config"](ctx=mock_ctx, url_path="kiosk")
-    mock_client.ws_command.assert_called_once_with("lovelace/config", url_path="kiosk")
+    mock_client.ws_command.assert_called_once_with(
+        "lovelace/config", url_path="kiosk"
+    )
 
 
 async def test_get_dashboard_config_default_url_path(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """url_path='lovelace' is treated the same as None. No url_path kwarg is sent."""
+    """
+    url_path='lovelace' is treated the same as None. No url_path kwarg is sent.
+    """
 
     mock_client.ws_command.return_value = _CONFIG
     await tools["get_dashboard_config"](ctx=mock_ctx, url_path="lovelace")
@@ -74,7 +92,9 @@ async def test_get_dashboard_config_default_url_path(
 
 
 async def test_create_dashboard_minimal(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     create_dashboard sends default sidebar and admin flags when optional args
@@ -96,9 +116,13 @@ async def test_create_dashboard_minimal(
 
 
 async def test_create_dashboard_with_icon(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_dashboard includes icon and custom sidebar/admin flags when provided."""
+    """
+    create_dashboard includes icon and custom sidebar/admin flags when provided.
+    """
 
     mock_client.ws_command.return_value = {}
     await tools["create_dashboard"](
@@ -116,7 +140,9 @@ async def test_create_dashboard_with_icon(
 
 
 async def test_update_dashboard_config_default(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     update_dashboard_config sends lovelace/config/save with config only when
@@ -133,7 +159,9 @@ async def test_update_dashboard_config_default(
 
 
 async def test_update_dashboard_config_named(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_dashboard_config includes url_path for named dashboards."""
 
@@ -149,7 +177,9 @@ async def test_update_dashboard_config_named(
 
 
 async def test_delete_dashboard(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     delete_dashboard calls lovelace/dashboards/delete with dashboard_id and
@@ -157,7 +187,9 @@ async def test_delete_dashboard(
     """
 
     mock_client.ws_command.return_value = None
-    result = await tools["delete_dashboard"](ctx=mock_ctx, dashboard_id="dashboard_old")
+    result = await tools["delete_dashboard"](
+        ctx=mock_ctx, dashboard_id="dashboard_old"
+    )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/dashboards/delete",
         dashboard_id="dashboard_old",
@@ -166,7 +198,9 @@ async def test_delete_dashboard(
 
 
 async def test_update_dashboard(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     update_dashboard calls lovelace/dashboards/update with only the provided
@@ -186,7 +220,9 @@ async def test_update_dashboard(
 
 
 async def test_update_dashboard_multiple_fields(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_dashboard passes only the non-None kwargs to ws_command."""
 
@@ -208,7 +244,9 @@ async def test_update_dashboard_multiple_fields(
 
 
 async def test_list_dashboards_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_dashboards returns an error string when the WebSocket call fails."""
 
@@ -219,9 +257,13 @@ async def test_list_dashboards_error(
 
 
 async def test_get_dashboard_config_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_dashboard_config returns an error string when the WebSocket call fails."""
+    """
+    get_dashboard_config returns an error string when the WebSocket call fails.
+    """
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
     result = await tools["get_dashboard_config"](ctx=mock_ctx)
@@ -230,7 +272,9 @@ async def test_get_dashboard_config_error(
 
 
 async def test_create_dashboard_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """create_dashboard returns an error string when the WebSocket call fails."""
 
@@ -243,9 +287,13 @@ async def test_create_dashboard_error(
 
 
 async def test_update_dashboard_config_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """update_dashboard_config returns an error string when the WebSocket call fails."""
+    """
+    update_dashboard_config returns an error string when the WebSocket call fails.
+    """
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
     result = await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
@@ -254,7 +302,9 @@ async def test_update_dashboard_config_error(
 
 
 async def test_update_dashboard_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_dashboard returns an error string when the WebSocket call fails."""
 
@@ -267,7 +317,9 @@ async def test_update_dashboard_error(
 
 
 async def test_delete_dashboard_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """delete_dashboard returns an error string when the WebSocket call fails."""
 

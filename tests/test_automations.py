@@ -32,9 +32,13 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_automations_filters_domain(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_automations returns only entities whose entity_id starts with 'automation.'."""
+    """
+    list_automations returns only entities whose entity_id starts with 'automation.'.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_automations"](ctx=mock_ctx)
@@ -43,9 +47,13 @@ async def test_list_automations_filters_domain(
 
 
 async def test_list_automations_empty(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_automations returns an empty list when no automation entities are present."""
+    """
+    list_automations returns an empty list when no automation entities are present.
+    """
 
     mock_client.get.return_value = [{"entity_id": "light.kitchen", "state": "on"}]
     result = await tools["list_automations"](ctx=mock_ctx)
@@ -53,9 +61,13 @@ async def test_list_automations_empty(
 
 
 async def test_trigger_automation(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """trigger_automation calls the automation/trigger service with the entity_id."""
+    """
+    trigger_automation calls the automation/trigger service with the entity_id.
+    """
 
     mock_client.post.return_value = []
     await tools["trigger_automation"](
@@ -68,7 +80,9 @@ async def test_trigger_automation(
 
 
 async def test_enable_automation(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """enable_automation calls the automation/turn_on service with the entity_id."""
 
@@ -81,12 +95,18 @@ async def test_enable_automation(
 
 
 async def test_disable_automation(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """disable_automation calls the automation/turn_off service with the entity_id."""
+    """
+    disable_automation calls the automation/turn_off service with the entity_id.
+    """
 
     mock_client.post.return_value = []
-    await tools["disable_automation"](ctx=mock_ctx, entity_id="automation.goodnight")
+    await tools["disable_automation"](
+        ctx=mock_ctx, entity_id="automation.goodnight"
+    )
     mock_client.post.assert_called_once_with(
         "/api/services/automation/turn_off",
         {"entity_id": "automation.goodnight"},
@@ -94,9 +114,14 @@ async def test_disable_automation(
 
 
 async def test_reload_automations_returns_count(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """reload_automations returns a string containing the count of reloaded automations."""
+    """
+    reload_automations returns a string containing the count of reloaded
+    automations.
+    """
 
     mock_client.post.return_value = [{"entity_id": "automation.morning_lights"}]
     result = await tools["reload_automations"](ctx=mock_ctx)
@@ -105,7 +130,9 @@ async def test_reload_automations_returns_count(
 
 
 async def test_reload_automations_empty_result(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     reload_automations returns a string containing '0' when the reload response
@@ -118,9 +145,13 @@ async def test_reload_automations_empty_result(
 
 
 async def test_list_scripts_filters_domain(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_scripts returns only entities whose entity_id starts with 'script.'."""
+    """
+    list_scripts returns only entities whose entity_id starts with 'script.'.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_scripts"](ctx=mock_ctx)
@@ -129,9 +160,14 @@ async def test_list_scripts_filters_domain(
 
 
 async def test_run_script_without_variables(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """run_script calls script/turn_on with entity_id only when no variables are given."""
+    """
+    run_script calls script/turn_on with entity_id only when no variables are
+    given.
+    """
 
     mock_client.post.return_value = []
     await tools["run_script"](ctx=mock_ctx, entity_id="script.goodnight")
@@ -142,9 +178,14 @@ async def test_run_script_without_variables(
 
 
 async def test_run_script_with_variables(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """run_script includes a 'variables' key in the payload when variables are provided."""
+    """
+    run_script includes a 'variables' key in the payload when variables are
+    provided.
+    """
 
     mock_client.post.return_value = []
     await tools["run_script"](
@@ -159,7 +200,9 @@ async def test_run_script_with_variables(
 
 
 async def test_list_scenes_filters_domain(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_scenes returns only entities whose entity_id starts with 'scene.'."""
 
@@ -170,7 +213,9 @@ async def test_list_scenes_filters_domain(
 
 
 async def test_activate_scene(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """activate_scene calls the scene/turn_on service with the entity_id."""
 
@@ -183,7 +228,9 @@ async def test_activate_scene(
 
 
 async def test_list_automations_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_automations returns an error string when the API call fails."""
 
@@ -194,7 +241,9 @@ async def test_list_automations_error(
 
 
 async def test_trigger_automation_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """trigger_automation returns an error string when the API call fails."""
 
@@ -207,7 +256,9 @@ async def test_trigger_automation_error(
 
 
 async def test_enable_automation_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """enable_automation returns an error string when the API call fails."""
 
@@ -220,7 +271,9 @@ async def test_enable_automation_error(
 
 
 async def test_disable_automation_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """disable_automation returns an error string when the API call fails."""
 
@@ -233,7 +286,9 @@ async def test_disable_automation_error(
 
 
 async def test_reload_automations_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """reload_automations returns an error string when the API call fails."""
 
@@ -244,7 +299,9 @@ async def test_reload_automations_error(
 
 
 async def test_list_scripts_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_scripts returns an error string when the API call fails."""
 
@@ -255,18 +312,24 @@ async def test_list_scripts_error(
 
 
 async def test_run_script_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """run_script returns an error string when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["run_script"](ctx=mock_ctx, entity_id="script.goodnight")
+    result = await tools["run_script"](
+        ctx=mock_ctx, entity_id="script.goodnight"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")
 
 
 async def test_list_scenes_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_scenes returns an error string when the API call fails."""
 
@@ -277,11 +340,15 @@ async def test_list_scenes_error(
 
 
 async def test_activate_scene_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """activate_scene returns an error string when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["activate_scene"](ctx=mock_ctx, entity_id="scene.movie_time")
+    result = await tools["activate_scene"](
+        ctx=mock_ctx, entity_id="scene.movie_time"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")

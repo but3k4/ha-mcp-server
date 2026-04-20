@@ -56,7 +56,9 @@ def tools() -> dict[str, Any]:
 
 
 async def test_get_ha_config(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_ha_config returns the HA configuration dict from /api/config."""
 
@@ -67,9 +69,13 @@ async def test_get_ha_config(
 
 
 async def test_check_config_valid(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """check_config returns the validation result dict when the configuration is valid."""
+    """
+    check_config returns the validation result dict when the configuration is valid.
+    """
 
     mock_client.post.return_value = {"result": "valid", "errors": []}
     result = await tools["check_config"](ctx=mock_ctx)
@@ -78,7 +84,9 @@ async def test_check_config_valid(
 
 
 async def test_check_config_invalid(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     check_config returns the validation result dict including errors when config
@@ -95,9 +103,14 @@ async def test_check_config_invalid(
 
 
 async def test_restart_ha(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """restart_ha POSTs to the core restart endpoint and returns a confirmation string."""
+    """
+    restart_ha POSTs to the core restart endpoint and returns a confirmation
+    string.
+    """
 
     mock_client.post.return_value = "restarting"
     result = await tools["restart_ha"](ctx=mock_ctx)
@@ -106,9 +119,13 @@ async def test_restart_ha(
 
 
 async def test_get_supervisor_info(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_supervisor_info returns the supervisor data dict from the nested data key."""
+    """
+    get_supervisor_info returns the supervisor data dict from the nested data key.
+    """
 
     mock_client.get.return_value = {"data": _SUPERVISOR_DATA}
     result = await tools["get_supervisor_info"](ctx=mock_ctx)
@@ -117,7 +134,9 @@ async def test_get_supervisor_info(
 
 
 async def test_get_supervisor_info_fallback(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """Falls back to full response when no 'data' key."""
 
@@ -127,7 +146,9 @@ async def test_get_supervisor_info_fallback(
 
 
 async def test_get_core_info(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_core_info returns the core data dict from the nested data key."""
 
@@ -138,7 +159,9 @@ async def test_get_core_info(
 
 
 async def test_get_host_info(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_host_info returns the host data dict from the nested data key."""
 
@@ -149,7 +172,9 @@ async def test_get_host_info(
 
 
 async def test_get_os_info(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_os_info returns the OS data dict from the nested data key."""
 
@@ -162,9 +187,13 @@ async def test_get_os_info(
 
 
 async def test_update_core(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """update_core POSTs to the core update endpoint and returns the result string."""
+    """
+    update_core POSTs to the core update endpoint and returns the result string.
+    """
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["update_core"](ctx=mock_ctx)
@@ -173,7 +202,9 @@ async def test_update_core(
 
 
 async def test_update_supervisor(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     update_supervisor POSTs to the supervisor update endpoint and returns the
@@ -187,7 +218,9 @@ async def test_update_supervisor(
 
 
 async def test_update_os(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_os POSTs to the OS update endpoint and returns the result string."""
 
@@ -198,9 +231,14 @@ async def test_update_os(
 
 
 async def test_list_integrations(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_integrations returns all config entries from /api/config/config_entries/entry."""
+    """
+    list_integrations returns all config entries from
+    /api/config/config_entries/entry.
+    """
 
     entries = [{"entry_id": "e1", "domain": "hue", "title": "Hue", "state": "loaded"}]
     mock_client.get.return_value = entries
@@ -210,12 +248,19 @@ async def test_list_integrations(
 
 
 async def test_reload_integration(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """reload_integration POSTs to the entry reload endpoint and returns the response dict."""
+    """
+    reload_integration POSTs to the entry reload endpoint and returns the
+    response dict.
+    """
 
     mock_client.post.return_value = {"require_restart": False}
-    result = await tools["reload_integration"](ctx=mock_ctx, entry_id="entry_id_1")
+    result = await tools["reload_integration"](
+        ctx=mock_ctx, entry_id="entry_id_1"
+    )
     assert "require_restart" in result
     mock_client.post.assert_called_once_with(
         "/api/config/config_entries/entry/entry_id_1/reload"
@@ -223,9 +268,13 @@ async def test_reload_integration(
 
 
 async def test_get_system_health(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_system_health returns the system health dict from /api/system_health."""
+    """
+    get_system_health returns the system health dict from /api/system_health.
+    """
 
     health = {"homeassistant": {"info": {"version": "2024.1.0"}}}
     mock_client.get.return_value = health
@@ -235,9 +284,13 @@ async def test_get_system_health(
 
 
 async def test_list_users(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_users returns all user records from /api/config/auth/users."""
+    """
+    list_users returns all user records from /api/config/auth/users.
+    """
 
     mock_client.get.return_value = _USERS
     result = await tools["list_users"](ctx=mock_ctx)
@@ -247,9 +300,14 @@ async def test_list_users(
 
 
 async def test_create_backup(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_backup POSTs to the full backup endpoint and returns the backup data dict."""
+    """
+    create_backup POSTs to the full backup endpoint and returns the backup data
+    dict.
+    """
 
     mock_client.post.return_value = {"data": {"slug": "abc123"}}
     result = await tools["create_backup"](ctx=mock_ctx)
@@ -258,7 +316,9 @@ async def test_create_backup(
 
 
 async def test_create_backup_fallback(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """Falls back to full response when no 'data' key."""
 
@@ -268,7 +328,9 @@ async def test_create_backup_fallback(
 
 
 async def test_list_backups(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_backups returns the backup list from the nested data.backups key."""
 
@@ -279,7 +341,9 @@ async def test_list_backups(
 
 
 async def test_list_backups_empty(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_backups returns an empty list when no backups exist."""
 
@@ -289,7 +353,9 @@ async def test_list_backups_empty(
 
 
 async def test_get_ha_config_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_ha_config returns an error string when the API call fails."""
 
@@ -300,7 +366,9 @@ async def test_get_ha_config_error(
 
 
 async def test_check_config_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """check_config returns an error string when the API call fails."""
 
@@ -311,7 +379,9 @@ async def test_check_config_error(
 
 
 async def test_restart_ha_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """restart_ha returns an error string when the API call fails."""
 
@@ -322,9 +392,13 @@ async def test_restart_ha_error(
 
 
 async def test_get_supervisor_info_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_supervisor_info returns an error string when the API call fails."""
+    """
+    get_supervisor_info returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["get_supervisor_info"](ctx=mock_ctx)
@@ -333,9 +407,13 @@ async def test_get_supervisor_info_error(
 
 
 async def test_get_core_info_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_core_info returns an error string when the API call fails."""
+    """
+    get_core_info returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["get_core_info"](ctx=mock_ctx)
@@ -344,7 +422,9 @@ async def test_get_core_info_error(
 
 
 async def test_get_host_info_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_host_info returns an error string when the API call fails."""
 
@@ -355,7 +435,9 @@ async def test_get_host_info_error(
 
 
 async def test_get_os_info_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """get_os_info returns an error string when the API call fails."""
 
@@ -366,7 +448,9 @@ async def test_get_os_info_error(
 
 
 async def test_update_core_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_core returns an error string when the API call fails."""
 
@@ -377,7 +461,9 @@ async def test_update_core_error(
 
 
 async def test_update_supervisor_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_supervisor returns an error string when the API call fails."""
 
@@ -388,7 +474,9 @@ async def test_update_supervisor_error(
 
 
 async def test_update_os_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """update_os returns an error string when the API call fails."""
 
@@ -399,9 +487,13 @@ async def test_update_os_error(
 
 
 async def test_list_integrations_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_integrations returns an error string when the API call fails."""
+    """
+    list_integrations returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["list_integrations"](ctx=mock_ctx)
@@ -410,20 +502,30 @@ async def test_list_integrations_error(
 
 
 async def test_reload_integration_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """reload_integration returns an error string when the API call fails."""
+    """
+    reload_integration returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["reload_integration"](ctx=mock_ctx, entry_id="entry_id_1")
+    result = await tools["reload_integration"](
+        ctx=mock_ctx, entry_id="entry_id_1"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")
 
 
 async def test_get_system_health_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """get_system_health returns an error string when the API call fails."""
+    """
+    get_system_health returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["get_system_health"](ctx=mock_ctx)
@@ -432,9 +534,13 @@ async def test_get_system_health_error(
 
 
 async def test_list_users_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_users returns an error string when the API call fails."""
+    """
+    list_users returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["list_users"](ctx=mock_ctx)
@@ -443,9 +549,13 @@ async def test_list_users_error(
 
 
 async def test_create_backup_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """create_backup returns an error string when the API call fails."""
+    """
+    create_backup returns an error string when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
     result = await tools["create_backup"](ctx=mock_ctx)
@@ -454,9 +564,13 @@ async def test_create_backup_error(
 
 
 async def test_list_backups_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_backups returns an error string when the API call fails."""
+    """
+    list_backups returns an error string when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
     result = await tools["list_backups"](ctx=mock_ctx)

@@ -38,9 +38,14 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_input_helpers_all(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_input_helpers returns all input_* and timer entities, excluding other domains."""
+    """
+    list_input_helpers returns all input_* and timer entities, excluding other
+    domains.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_input_helpers"](ctx=mock_ctx)
@@ -51,9 +56,13 @@ async def test_list_input_helpers_all(
 
 
 async def test_list_input_helpers_domain_filter(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """list_input_helpers filters to a single domain when the domain argument is given."""
+    """
+    list_input_helpers filters to a single domain when the domain argument is given.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_input_helpers"](ctx=mock_ctx, domain="input_boolean")
@@ -62,7 +71,9 @@ async def test_list_input_helpers_domain_filter(
 
 
 async def test_list_input_helpers_timer_domain(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_input_helpers accepts 'timer' as a valid domain filter."""
 
@@ -73,7 +84,9 @@ async def test_list_input_helpers_timer_domain(
 
 
 async def test_set_input_boolean_on(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_boolean calls input_boolean/turn_on when state is 'on'."""
 
@@ -88,7 +101,9 @@ async def test_set_input_boolean_on(
 
 
 async def test_set_input_boolean_off(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_boolean calls input_boolean/turn_off when state is 'off'."""
 
@@ -103,9 +118,13 @@ async def test_set_input_boolean_off(
 
 
 async def test_set_input_boolean_invalid_state(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """set_input_boolean returns an error string when state is not 'on' or 'off'."""
+    """
+    set_input_boolean returns an error string when state is not 'on' or 'off'.
+    """
 
     result = await tools["set_input_boolean"](
         ctx=mock_ctx, entity_id="input_boolean.x", state="toggle"
@@ -115,7 +134,9 @@ async def test_set_input_boolean_invalid_state(
 
 
 async def test_set_input_number(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_number calls input_number/set_value with the numeric value."""
 
@@ -130,9 +151,13 @@ async def test_set_input_number(
 
 
 async def test_set_input_select(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """set_input_select calls input_select/select_option with the chosen option."""
+    """
+    set_input_select calls input_select/select_option with the chosen option.
+    """
 
     mock_client.post.return_value = []
     await tools["set_input_select"](
@@ -145,9 +170,13 @@ async def test_set_input_select(
 
 
 async def test_set_input_text(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """set_input_text calls input_text/set_value with the provided string value."""
+    """
+    set_input_text calls input_text/set_value with the provided string value.
+    """
 
     mock_client.post.return_value = []
     await tools["set_input_text"](
@@ -160,7 +189,9 @@ async def test_set_input_text(
 
 
 async def test_set_input_datetime_time_only(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """
     set_input_datetime sends only the 'time' field when date and datetime_str
@@ -178,9 +209,14 @@ async def test_set_input_datetime_time_only(
 
 
 async def test_set_input_datetime_full(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """set_input_datetime sends date and datetime fields when all arguments are provided."""
+    """
+    set_input_datetime sends date and datetime fields when all arguments are
+    provided.
+    """
 
     mock_client.post.return_value = []
     await tools["set_input_datetime"](
@@ -200,9 +236,13 @@ async def test_set_input_datetime_full(
 
 
 async def test_start_timer_no_duration(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """start_timer calls timer/start without a duration key when none is provided."""
+    """
+    start_timer calls timer/start without a duration key when none is provided.
+    """
 
     mock_client.post.return_value = []
     await tools["start_timer"](ctx=mock_ctx, entity_id="timer.cooking")
@@ -213,9 +253,13 @@ async def test_start_timer_no_duration(
 
 
 async def test_start_timer_with_duration(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
-    """start_timer includes the duration key in the payload when a duration is given."""
+    """
+    start_timer includes the duration key in the payload when a duration is given.
+    """
 
     mock_client.post.return_value = []
     await tools["start_timer"](
@@ -228,7 +272,9 @@ async def test_start_timer_with_duration(
 
 
 async def test_pause_timer(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """pause_timer calls the timer/pause service with the entity_id."""
 
@@ -240,7 +286,9 @@ async def test_pause_timer(
 
 
 async def test_cancel_timer(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """cancel_timer calls the timer/cancel service with the entity_id."""
 
@@ -252,7 +300,9 @@ async def test_cancel_timer(
 
 
 async def test_list_input_helpers_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """list_input_helpers returns an error string when the API call fails."""
 
@@ -263,7 +313,9 @@ async def test_list_input_helpers_error(
 
 
 async def test_set_input_boolean_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_boolean returns an error string when the API call fails."""
 
@@ -276,7 +328,9 @@ async def test_set_input_boolean_error(
 
 
 async def test_set_input_number_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_number returns an error string when the API call fails."""
 
@@ -289,7 +343,9 @@ async def test_set_input_number_error(
 
 
 async def test_set_input_select_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_select returns an error string when the API call fails."""
 
@@ -302,7 +358,9 @@ async def test_set_input_select_error(
 
 
 async def test_set_input_text_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_text returns an error string when the API call fails."""
 
@@ -315,7 +373,9 @@ async def test_set_input_text_error(
 
 
 async def test_set_input_datetime_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """set_input_datetime returns an error string when the API call fails."""
 
@@ -328,7 +388,9 @@ async def test_set_input_datetime_error(
 
 
 async def test_start_timer_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """start_timer returns an error string when the API call fails."""
 
@@ -339,22 +401,30 @@ async def test_start_timer_error(
 
 
 async def test_pause_timer_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """pause_timer returns an error string when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["pause_timer"](ctx=mock_ctx, entity_id="timer.cooking")
+    result = await tools["pause_timer"](
+        ctx=mock_ctx, entity_id="timer.cooking"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")
 
 
 async def test_cancel_timer_error(
-    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
 ) -> None:
     """cancel_timer returns an error string when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["cancel_timer"](ctx=mock_ctx, entity_id="timer.cooking")
+    result = await tools["cancel_timer"](
+        ctx=mock_ctx, entity_id="timer.cooking"
+    )
     assert isinstance(result, str)
     assert result.startswith("Error:")
