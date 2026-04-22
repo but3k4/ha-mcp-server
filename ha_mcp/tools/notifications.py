@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -19,7 +17,7 @@ def register(mcp: FastMCP) -> None:
     """Register all notification tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_notification_services(ctx: Context) -> list[str] | str:
+    async def list_notification_services(ctx: Context) -> list[str]:
         """
         List all available notification service names in Home Assistant.
 
@@ -37,10 +35,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            services: list[dict[str, Any]] = await client.get("/api/services")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        services: list[dict[str, Any]] = await client.get("/api/services")
 
         for domain_info in services:
             if domain_info.get("domain") == "notify":
@@ -57,7 +52,7 @@ def register(mcp: FastMCP) -> None:
         service: str = "notify",
         target: list[str] | None = None,
         data: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Send a notification via a Home Assistant notify service.
 
@@ -72,11 +67,12 @@ def register(mcp: FastMCP) -> None:
             title: Optional notification title.
             service: Notify service name, e.g. "notify" or
                      "mobile_app_my_phone".
-            target: Optional list of targets (device IDs, group names) supported
-                    by the chosen service.
-            data: Optional service-specific extra payload. For iOS/Android mobile
-                  push use {"push": {"sound": "default"}}. For other services
-                  consult the integration docs for supported keys.
+            target: Optional list of targets (device IDs, group names)
+                    supported by the chosen service.
+            data: Optional service-specific extra payload. For
+                  iOS/Android mobile push use {"push": {"sound": "default"}}.
+                  For other services consult the integration docs for supported
+                  keys.
 
         Returns:
             List of entity states affected by the service call.
@@ -91,22 +87,19 @@ def register(mcp: FastMCP) -> None:
             payload["data"] = data
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(f"/api/services/notify/{service}", payload)
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(f"/api/services/notify/{service}", payload)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_persistent_notifications(
         ctx: Context,
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         List all active persistent notifications shown in the HA UI bell menu.
 
         Persistent notifications remain visible in the HA frontend until
         explicitly dismissed. Each entry has a notification_id (in the
-        entity_id as persistent_notification.<id>) and attributes containing
-        message, title, and created_at.
+        entity_id as persistent_notification.<id>) and attributes
+        containing message, title, and created_at.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
@@ -116,11 +109,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            states: list[dict[str, Any]] = await client.get("/api/states")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
-
+        states: list[dict[str, Any]] = await client.get("/api/states")
         return [
             s for s in states if s["entity_id"].startswith("persistent_notification.")
         ]
@@ -131,7 +120,7 @@ def register(mcp: FastMCP) -> None:
         message: str,
         title: str | None = None,
         notification_id: str | None = None,
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Create a persistent notification in the Home Assistant UI.
 
@@ -143,8 +132,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             message: Notification body text (supports Markdown).
             title: Optional notification title.
-            notification_id: Optional stable ID for upsert behaviour. If omitted
-                             HA generates a random one.
+            notification_id: Optional stable ID for upsert behaviour. If
+                             omitted HA generates a random one.
 
         Returns:
             List of entity states affected by the service call.
@@ -157,18 +146,15 @@ def register(mcp: FastMCP) -> None:
             payload["notification_id"] = notification_id
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/persistent_notification/create", payload
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/persistent_notification/create", payload
+        )
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
     async def dismiss_persistent_notification(
         ctx: Context,
         notification_id: str,
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Dismiss a persistent notification from the Home Assistant UI.
 
@@ -182,10 +168,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/persistent_notification/dismiss",
-                {"notification_id": notification_id},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/persistent_notification/dismiss",
+            {"notification_id": notification_id},
+        )

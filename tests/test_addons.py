@@ -81,9 +81,7 @@ async def test_get_addon_info(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_addon_info returns the add-on detail dict from the nested data key.
-    """
+    """get_addon_info returns the add-on detail dict from the nested data key."""
 
     mock_client.get.return_value = {"data": _ADDON_INFO}
     result = await tools["get_addon_info"](
@@ -144,11 +142,15 @@ async def test_uninstall_addon(
     mock_client: MagicMock
 ) -> None:
     """
-    uninstall_addon POSTs to the uninstall endpoint and returns the result string.
+    uninstall_addon POSTs to the uninstall endpoint and returns the result
+    string.
     """
 
     mock_client.post.return_value = {"result": "ok"}
-    result = await tools["uninstall_addon"](ctx=mock_ctx, addon_slug="core_ssh")
+    result = await tools["uninstall_addon"](
+        ctx=mock_ctx,
+        addon_slug="core_ssh"
+    )
     assert result == "ok"
     mock_client.post.assert_called_once_with(
         "/api/hassio/addons/core_ssh/uninstall"
@@ -166,7 +168,8 @@ async def test_update_addon(
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["update_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
+        ctx=mock_ctx,
+        addon_slug="core_mosquitto"
     )
     assert result == "ok"
     mock_client.post.assert_called_once_with(
@@ -179,13 +182,12 @@ async def test_start_addon(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    start_addon POSTs to the start endpoint and returns the result string.
-    """
+    """start_addon POSTs to the start endpoint and returns the result string."""
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["start_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
+        ctx=mock_ctx,
+        addon_slug="core_mosquitto"
     )
     assert result == "ok"
     mock_client.post.assert_called_once_with(
@@ -198,14 +200,17 @@ async def test_stop_addon(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """stop_addon POSTs to the stop endpoint and returns the result string. """
+    """stop_addon POSTs to the stop endpoint and returns the result string."""
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["stop_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
+        ctx=mock_ctx,
+        addon_slug="core_mosquitto"
     )
     assert result == "ok"
-    mock_client.post.assert_called_once_with("/api/hassio/addons/core_mosquitto/stop")
+    mock_client.post.assert_called_once_with(
+        "/api/hassio/addons/core_mosquitto/stop"
+    )
 
 
 async def test_restart_addon(
@@ -219,7 +224,8 @@ async def test_restart_addon(
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["restart_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
+        ctx=mock_ctx,
+        addon_slug="core_mosquitto"
     )
     assert result == "ok"
     mock_client.post.assert_called_once_with(
@@ -233,12 +239,14 @@ async def test_get_addon_logs(
     mock_client: MagicMock
 ) -> None:
     """
-    get_addon_logs returns the raw log text from the Hassio add-on logs endpoint.
+    get_addon_logs returns the raw log text from the Hassio add-on logs
+    endpoint.
     """
 
     mock_client.get.return_value = "addon log line 1\naddon log line 2"
     result = await tools["get_addon_logs"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
+        ctx=mock_ctx,
+        addon_slug="core_mosquitto"
     )
     assert "addon log" in result
     mock_client.get.assert_called_once_with(
@@ -320,17 +328,44 @@ async def test_add_addon_repository(
     )
 
 
+async def test_add_addon_repository_rejects_non_https(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """add_addon_repository raises ValueError on any scheme other than https."""
+
+    with pytest.raises(ValueError, match="https://"):
+        await tools["add_addon_repository"](
+            ctx=mock_ctx, repository_url="http://github.com/owner/repo"
+        )
+    mock_client.post.assert_not_called()
+
+
+async def test_add_addon_repository_rejects_file_scheme(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """add_addon_repository raises ValueError for file:// URLs."""
+
+    with pytest.raises(ValueError, match="https://"):
+        await tools["add_addon_repository"](
+            ctx=mock_ctx, repository_url="file:///etc/passwd"
+        )
+    mock_client.post.assert_not_called()
+
+
 async def test_list_addons_error(
     tools: dict[str, Any],
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_addons returns an error string when the API call fails."""
+    """list_addons propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_addons"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_addons"](ctx=mock_ctx)
 
 
 async def test_get_addon_info_error(
@@ -338,14 +373,14 @@ async def test_get_addon_info_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_addon_info returns an error string when the API call fails."""
+    """get_addon_info propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_addon_info"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_addon_info"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_install_addon_error(
@@ -353,12 +388,11 @@ async def test_install_addon_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """install_addon returns an error string when the API call fails."""
+    """install_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["install_addon"](ctx=mock_ctx, addon_slug="core_ssh")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["install_addon"](ctx=mock_ctx, addon_slug="core_ssh")
 
 
 async def test_uninstall_addon_error(
@@ -366,27 +400,25 @@ async def test_uninstall_addon_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """uninstall_addon returns an error string when the API call fails."""
+    """uninstall_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["uninstall_addon"](ctx=mock_ctx, addon_slug="core_ssh")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["uninstall_addon"](ctx=mock_ctx, addon_slug="core_ssh")
 
 
 async def test_update_addon_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """update_addon returns an error string when the API call fails."""
+    """update_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["update_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["update_addon"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_start_addon_error(
@@ -394,29 +426,28 @@ async def test_start_addon_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """start_addon returns an error string when the API call fails."""
+    """start_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["start_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["start_addon"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_stop_addon_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """stop_addon returns an error string when the API call fails."""
+    """stop_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["stop_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["stop_addon"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_restart_addon_error(
@@ -424,29 +455,28 @@ async def test_restart_addon_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """restart_addon returns an error string when the API call fails."""
+    """restart_addon propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["restart_addon"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["restart_addon"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_get_addon_logs_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """get_addon_logs returns an error string when the API call fails."""
+    """get_addon_logs propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_addon_logs"](
-        ctx=mock_ctx, addon_slug="core_mosquitto"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_addon_logs"](
+            ctx=mock_ctx,
+            addon_slug="core_mosquitto"
+        )
 
 
 async def test_set_addon_options_error(
@@ -454,14 +484,13 @@ async def test_set_addon_options_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_addon_options returns an error string when the API call fails."""
+    """set_addon_options propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_addon_options"](
-        ctx=mock_ctx, addon_slug="core_mosquitto", options={"logins": []}
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_addon_options"](
+            ctx=mock_ctx, addon_slug="core_mosquitto", options={"logins": []}
+        )
 
 
 async def test_list_addon_repositories_error(
@@ -469,12 +498,13 @@ async def test_list_addon_repositories_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_addon_repositories returns an error string when the API call fails."""
+    """
+    list_addon_repositories propagates HomeAssistantError when the API call fails.
+    """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_addon_repositories"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_addon_repositories"](ctx=mock_ctx)
 
 
 async def test_add_addon_repository_error(
@@ -482,11 +512,12 @@ async def test_add_addon_repository_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """add_addon_repository returns an error string when the API call fails."""
+    """
+    add_addon_repository propagates HomeAssistantError when the API call fails.
+    """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["add_addon_repository"](
-        ctx=mock_ctx, repository_url="https://github.com/owner/repo"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["add_addon_repository"](
+            ctx=mock_ctx, repository_url="https://github.com/owner/repo"
+        )

@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -24,7 +22,7 @@ def register(mcp: FastMCP) -> None:
     """Register all Lovelace dashboard tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_dashboards(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_dashboards(ctx: Context) -> list[dict[str, Any]]:
         """
         List all Lovelace dashboards configured in Home Assistant.
 
@@ -39,16 +37,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.ws_command("lovelace/dashboards/list")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.ws_command("lovelace/dashboards/list")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_dashboard_config(
         ctx: Context,
         url_path: str | None = None
-    ) -> dict[str, Any] | str:
+    ) -> dict[str, Any]:
         """
         Get the full Lovelace configuration for a dashboard.
 
@@ -69,10 +64,7 @@ def register(mcp: FastMCP) -> None:
         kwargs: dict[str, Any] = {}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
-        try:
-            return await client.ws_command("lovelace/config", **kwargs)
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.ws_command("lovelace/config", **kwargs)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def create_dashboard(
@@ -82,7 +74,7 @@ def register(mcp: FastMCP) -> None:
         icon: str | None = None,
         show_in_sidebar: bool = True,
         require_admin: bool = False,
-    ) -> dict[str, Any] | str:
+    ) -> dict[str, Any]:
         """
         Create a new Lovelace dashboard.
 
@@ -90,7 +82,7 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            url_path: Unique URL path for the dashboard.  HA will expose it at
+            url_path: Unique URL path for the dashboard. HA will expose it at
                       /dashboard-{url_path}/, e.g. tablet becomes
                       /dashboard-tablet/.
             title: Human-readable title shown in the sidebar.
@@ -113,10 +105,7 @@ def register(mcp: FastMCP) -> None:
         }
         if icon:
             kwargs["icon"] = icon
-        try:
-            return await client.ws_command("lovelace/dashboards/create", **kwargs)
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.ws_command("lovelace/dashboards/create", **kwargs)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def update_dashboard_config(
@@ -143,10 +132,7 @@ def register(mcp: FastMCP) -> None:
         kwargs: dict[str, Any] = {"config": config}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
-        try:
-            await client.ws_command("lovelace/config/save", **kwargs)
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        await client.ws_command("lovelace/config/save", **kwargs)
         return "Dashboard configuration saved."
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -190,12 +176,9 @@ def register(mcp: FastMCP) -> None:
             kwargs["show_in_sidebar"] = show_in_sidebar
         if require_admin is not None:
             kwargs["require_admin"] = require_admin
-        try:
-            await client.ws_command(
-                "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        await client.ws_command(
+            "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
+        )
         return f"Dashboard {dashboard_id!r} updated."
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
@@ -216,10 +199,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            await client.ws_command(
-                "lovelace/dashboards/delete", dashboard_id=dashboard_id
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        await client.ws_command(
+            "lovelace/dashboards/delete", dashboard_id=dashboard_id
+        )
         return f"Dashboard {dashboard_id!r} deleted."

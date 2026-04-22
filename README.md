@@ -123,7 +123,7 @@ Common `HA_URL` formats:
 |-------------|----------|----------|-------------------------------------------|
 | `HA_URL`    | yes      | —        | Base URL of your Home Assistant instance  |
 | `HA_TOKEN`  | yes      | —        | Long-lived access token                   |
-| `TRANSPORT` | no       | `stdio`  | Transport mode: `stdio` or `sse`          |
+| `TRANSPORT` | no       | `stdio`  | Transport mode: `stdio`, `sse`, or `streamable-http` |
 | `PORT`      | no       | `8765`   | HTTP port when `TRANSPORT=sse`            |
 
 ---
@@ -175,7 +175,7 @@ podman run --rm -i --network=host --env-file .env ha-mcp-server
 
 ---
 
-### With Docker or Podman (SSE — persistent remote server)
+### With Docker or Podman (SSE: persistent remote server)
 
 Run the server as a long-lived SSE service so any MCP client on the network can connect without spawning a local process.
 

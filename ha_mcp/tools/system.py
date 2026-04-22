@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -21,7 +19,7 @@ def register(mcp: FastMCP) -> None:
     """Register all system and configuration tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_ha_config(ctx: Context) -> dict[str, Any] | str:
+    async def get_ha_config(ctx: Context) -> dict[str, Any]:
         """
         Get the current Home Assistant core configuration.
 
@@ -34,13 +32,10 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get("/api/config")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get("/api/config")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def check_config(ctx: Context) -> dict[str, Any] | str:
+    async def check_config(ctx: Context) -> dict[str, Any]:
         """
         Validate the Home Assistant YAML configuration files.
 
@@ -54,10 +49,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post("/api/config/core/check_config")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post("/api/config/core/check_config")
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
     async def restart_ha(ctx: Context) -> str:
@@ -72,14 +64,11 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            result = await client.post("/api/config/core/restart")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        result = await client.post("/api/config/core/restart")
         return str(result)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_supervisor_info(ctx: Context) -> dict[str, Any] | str:
+    async def get_supervisor_info(ctx: Context) -> dict[str, Any]:
         """
         Get Supervisor system information including version and update status.
 
@@ -91,21 +80,17 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Supervisor info dict with versions, channel, and update
-            availability.
+            Supervisor info dict with versions, channel, and update availability.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                f"{_SUPERVISOR_PREFIX}/supervisor/info"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            f"{_SUPERVISOR_PREFIX}/supervisor/info"
+        )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_core_info(ctx: Context) -> dict[str, Any] | str:
+    async def get_core_info(ctx: Context) -> dict[str, Any]:
         """
         Get Home Assistant Core process information via the Supervisor.
 
@@ -120,16 +105,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                f"{_SUPERVISOR_PREFIX}/core/info"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            f"{_SUPERVISOR_PREFIX}/core/info"
+        )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_host_info(ctx: Context) -> dict[str, Any] | str:
+    async def get_host_info(ctx: Context) -> dict[str, Any]:
         """
         Get information about the underlying host OS.
 
@@ -143,16 +125,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                f"{_SUPERVISOR_PREFIX}/host/info"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            f"{_SUPERVISOR_PREFIX}/host/info"
+        )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_os_info(ctx: Context) -> dict[str, Any] | str:
+    async def get_os_info(ctx: Context) -> dict[str, Any]:
         """
         Get Home Assistant OS information and update status.
 
@@ -167,10 +146,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/os/info")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/os/info")
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -189,12 +165,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/core/update"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/core/update"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -213,12 +186,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/supervisor/update"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/supervisor/update"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -237,16 +207,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/os/update"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/os/update"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_integrations(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_integrations(ctx: Context) -> list[dict[str, Any]]:
         """
         List all installed Home Assistant integrations.
 
@@ -254,14 +221,12 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            List of integration config entries with domain, title, and state.
+            List of integration config entries with domain,
+            title, and state.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get("/api/config/config_entries/entry")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get("/api/config/config_entries/entry")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def reload_integration(ctx: Context, entry_id: str) -> str:
@@ -281,16 +246,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            result = await client.post(
-                f"/api/config/config_entries/entry/{entry_id}/reload"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        result = await client.post(
+            f"/api/config/config_entries/entry/{entry_id}/reload"
+        )
         return str(result)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_system_health(ctx: Context) -> dict[str, Any] | str:
+    async def get_system_health(ctx: Context) -> dict[str, Any]:
         """
         Get system health information for all components.
 
@@ -302,13 +264,10 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get("/api/system_health")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get("/api/system_health")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_users(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_users(ctx: Context) -> list[dict[str, Any]]:
         """
         List all user accounts in Home Assistant.
 
@@ -320,13 +279,10 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get("/api/config/auth/users")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get("/api/config/auth/users")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def create_backup(ctx: Context) -> dict[str, Any] | str:
+    async def create_backup(ctx: Context) -> dict[str, Any]:
         """
         Trigger the creation of a full Home Assistant backup.
 
@@ -340,16 +296,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/backups/new/full"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/backups/new/full"
+        )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_backups(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_backups(ctx: Context) -> list[dict[str, Any]]:
         """
         List all available Home Assistant backups.
 
@@ -363,8 +316,5 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/backups")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/backups")
         return response.get("data", {}).get("backups", [])

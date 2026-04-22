@@ -39,6 +39,12 @@ from ha_mcp.tools import (
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
+_VALID_TRANSPORTS: tuple[Literal["stdio", "sse", "streamable-http"], ...] = (
+    "stdio",
+    "sse",
+    "streamable-http",
+)
+
 
 @dataclass
 class AppState:
@@ -51,6 +57,10 @@ def _load_client() -> HomeAssistantClient:
     """
     Load HA connection settings from the environment and return a configured client.
 
+    Environment variables take precedence. A .env file at the project root is
+    loaded as a fallback only when HA_URL or HA_TOKEN is not already set in
+    the process environment.
+
     Returns:
         A HomeAssistantClient ready for use. Call it as a context manager to
         open the connection.
@@ -59,10 +69,13 @@ def _load_client() -> HomeAssistantClient:
         ValueError: If HA_URL or HA_TOKEN are not set in the environment.
     """
 
-    load_dotenv(Path(__file__).parent.parent / ".env")
-
     ha_url = os.getenv("HA_URL")
     ha_token = os.getenv("HA_TOKEN")
+
+    if not (ha_url and ha_token):
+        load_dotenv(Path(__file__).parent.parent / ".env")
+        ha_url = os.getenv("HA_URL")
+        ha_token = os.getenv("HA_TOKEN")
 
     if not ha_url:
         raise ValueError("HA_URL environment variable is required.")
@@ -136,13 +149,17 @@ def main() -> None:
 
     Reads the TRANSPORT environment variable to select the transport. Defaults
     to stdio. When set to sse, binds an HTTP server on the port given by PORT
-    (default 8765).
+    (default 8765). Raises ValueError for any other TRANSPORT value rather than
+    silently falling back.
     """
 
     raw = os.getenv("TRANSPORT", "stdio")
-    transport: Literal["stdio", "sse", "streamable-http"] = (
-        raw if raw in ("stdio", "sse", "streamable-http") else "stdio"  # type: ignore[assignment]
-    )
+    if raw not in _VALID_TRANSPORTS:
+        raise ValueError(
+            f"Invalid TRANSPORT {raw!r}. "
+            f"Must be one of: {', '.join(_VALID_TRANSPORTS)}."
+        )
+    transport: Literal["stdio", "sse", "streamable-http"] = raw
     port = int(os.getenv("PORT", "8765"))
     server = create_server(port=port)
     server.run(transport=transport)

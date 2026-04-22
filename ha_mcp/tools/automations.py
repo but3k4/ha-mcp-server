@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -19,7 +17,7 @@ def register(mcp: FastMCP) -> None:
     """Register all automation and script tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_automations(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_automations(ctx: Context) -> list[dict[str, Any]]:
         """
         List all automations defined in Home Assistant.
 
@@ -32,18 +30,14 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            states: list[dict[str, Any]] = await client.get("/api/states")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
-
+        states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("automation.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def trigger_automation(
         ctx: Context,
         entity_id: str
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Manually trigger an automation regardless of its conditions.
 
@@ -56,19 +50,16 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/automation/trigger",
-                {"entity_id": entity_id},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/automation/trigger",
+            {"entity_id": entity_id},
+        )
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def enable_automation(
         ctx: Context,
         entity_id: str
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Enable a previously disabled automation.
 
@@ -81,19 +72,16 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/automation/turn_on",
-                {"entity_id": entity_id},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/automation/turn_on",
+            {"entity_id": entity_id},
+        )
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def disable_automation(
         ctx: Context,
         entity_id: str
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Disable an automation so it will not fire automatically.
 
@@ -106,13 +94,10 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/automation/turn_off",
-                {"entity_id": entity_id},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/automation/turn_off",
+            {"entity_id": entity_id},
+        )
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def reload_automations(ctx: Context) -> str:
@@ -127,14 +112,11 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            result = await client.post("/api/services/automation/reload")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        result = await client.post("/api/services/automation/reload")
         return f"Automations reloaded. Affected states: {len(result)}"
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_scripts(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_scripts(ctx: Context) -> list[dict[str, Any]]:
         """
         List all scripts defined in Home Assistant.
 
@@ -146,11 +128,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            states: list[dict[str, Any]] = await client.get("/api/states")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
-
+        states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("script.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -158,7 +136,7 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         entity_id: str,
         variables: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Execute a HA script entity.
 
@@ -176,13 +154,10 @@ def register(mcp: FastMCP) -> None:
         if variables:
             payload["variables"] = variables
 
-        try:
-            return await client.post("/api/services/script/turn_on", payload)
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post("/api/services/script/turn_on", payload)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_scenes(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_scenes(ctx: Context) -> list[dict[str, Any]]:
         """
         List all scenes defined in Home Assistant.
 
@@ -194,17 +169,14 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            states: list[dict[str, Any]] = await client.get("/api/states")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("scene.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def activate_scene(
         ctx: Context,
         entity_id: str
-    ) -> list[dict[str, Any]] | str:
+    ) -> list[dict[str, Any]]:
         """
         Activate a Home Assistant scene.
 
@@ -217,10 +189,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                "/api/services/scene/turn_on",
-                {"entity_id": entity_id},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            "/api/services/scene/turn_on",
+            {"entity_id": entity_id},
+        )

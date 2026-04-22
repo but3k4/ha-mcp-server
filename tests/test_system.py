@@ -31,8 +31,18 @@ _SUPERVISOR_DATA: dict[str, Any] = {
 }
 
 _USERS: list[dict[str, Any]] = [
-    {"id": "abc123", "name": "Admin", "is_active": True, "is_admin": True},
-    {"id": "def456", "name": "User", "is_active": True, "is_admin": False},
+    {
+        "id": "abc123",
+        "name": "Admin",
+        "is_active": True,
+        "is_admin": True
+    },
+    {
+        "id": "def456",
+        "name": "User",
+        "is_active": True,
+        "is_admin": False
+    }
 ]
 
 _BACKUPS: list[dict[str, Any]] = [
@@ -74,7 +84,8 @@ async def test_check_config_valid(
     mock_client: MagicMock
 ) -> None:
     """
-    check_config returns the validation result dict when the configuration is valid.
+    check_config returns the validation result dict when the configuration is
+    valid.
     """
 
     mock_client.post.return_value = {"result": "valid", "errors": []}
@@ -89,8 +100,8 @@ async def test_check_config_invalid(
     mock_client: MagicMock
 ) -> None:
     """
-    check_config returns the validation result dict including errors when config
-    is invalid.
+    check_config returns the validation result dict including errors when
+    config is invalid.
     """
 
     mock_client.post.return_value = {
@@ -124,7 +135,8 @@ async def test_get_supervisor_info(
     mock_client: MagicMock
 ) -> None:
     """
-    get_supervisor_info returns the supervisor data dict from the nested data key.
+    get_supervisor_info returns the supervisor data dict from the nested
+    data key.
     """
 
     mock_client.get.return_value = {"data": _SUPERVISOR_DATA}
@@ -192,7 +204,8 @@ async def test_update_core(
     mock_client: MagicMock
 ) -> None:
     """
-    update_core POSTs to the core update endpoint and returns the result string.
+    update_core POSTs to the core update endpoint and returns the result
+    string.
     """
 
     mock_client.post.return_value = {"result": "ok"}
@@ -207,8 +220,8 @@ async def test_update_supervisor(
     mock_client: MagicMock
 ) -> None:
     """
-    update_supervisor POSTs to the supervisor update endpoint and returns the
-    result string.
+    update_supervisor POSTs to the supervisor update endpoint and returns
+    the result string.
     """
 
     mock_client.post.return_value = {"result": "ok"}
@@ -222,7 +235,10 @@ async def test_update_os(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """update_os POSTs to the OS update endpoint and returns the result string."""
+    """
+    update_os POSTs to the OS update endpoint and returns the result
+    string.
+    """
 
     mock_client.post.return_value = {"result": "ok"}
     result = await tools["update_os"](ctx=mock_ctx)
@@ -259,8 +275,9 @@ async def test_reload_integration(
 
     mock_client.post.return_value = {"require_restart": False}
     result = await tools["reload_integration"](
-        ctx=mock_ctx, entry_id="entry_id_1"
-    )
+        ctx=mock_ctx,
+        entry_id="entry_id_1"
+        )
     assert "require_restart" in result
     mock_client.post.assert_called_once_with(
         "/api/config/config_entries/entry/entry_id_1/reload"
@@ -273,7 +290,8 @@ async def test_get_system_health(
     mock_client: MagicMock
 ) -> None:
     """
-    get_system_health returns the system health dict from /api/system_health.
+    get_system_health returns the system health dict from
+    /api/system_health.
     """
 
     health = {"homeassistant": {"info": {"version": "2024.1.0"}}}
@@ -332,7 +350,9 @@ async def test_list_backups(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_backups returns the backup list from the nested data.backups key."""
+    """
+    list_backups returns the backup list from the nested data.backups key.
+    """
 
     mock_client.get.return_value = {"data": {"backups": _BACKUPS}}
     result = await tools["list_backups"](ctx=mock_ctx)
@@ -357,12 +377,11 @@ async def test_get_ha_config_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_ha_config returns an error string when the API call fails."""
+    """get_ha_config propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_ha_config"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_ha_config"](ctx=mock_ctx)
 
 
 async def test_check_config_error(
@@ -370,12 +389,11 @@ async def test_check_config_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """check_config returns an error string when the API call fails."""
+    """check_config propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["check_config"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["check_config"](ctx=mock_ctx)
 
 
 async def test_restart_ha_error(
@@ -383,12 +401,11 @@ async def test_restart_ha_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """restart_ha returns an error string when the API call fails."""
+    """restart_ha propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["restart_ha"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["restart_ha"](ctx=mock_ctx)
 
 
 async def test_get_supervisor_info_error(
@@ -396,14 +413,11 @@ async def test_get_supervisor_info_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_supervisor_info returns an error string when the API call fails.
-    """
+    """get_supervisor_info propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_supervisor_info"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_supervisor_info"](ctx=mock_ctx)
 
 
 async def test_get_core_info_error(
@@ -411,14 +425,11 @@ async def test_get_core_info_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_core_info returns an error string when the API call fails.
-    """
+    """get_core_info propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_core_info"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_core_info"](ctx=mock_ctx)
 
 
 async def test_get_host_info_error(
@@ -426,12 +437,11 @@ async def test_get_host_info_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_host_info returns an error string when the API call fails."""
+    """get_host_info propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_host_info"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_host_info"](ctx=mock_ctx)
 
 
 async def test_get_os_info_error(
@@ -439,12 +449,11 @@ async def test_get_os_info_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_os_info returns an error string when the API call fails."""
+    """get_os_info propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_os_info"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_os_info"](ctx=mock_ctx)
 
 
 async def test_update_core_error(
@@ -452,12 +461,11 @@ async def test_update_core_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """update_core returns an error string when the API call fails."""
+    """update_core propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["update_core"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["update_core"](ctx=mock_ctx)
 
 
 async def test_update_supervisor_error(
@@ -465,12 +473,11 @@ async def test_update_supervisor_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """update_supervisor returns an error string when the API call fails."""
+    """update_supervisor propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["update_supervisor"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["update_supervisor"](ctx=mock_ctx)
 
 
 async def test_update_os_error(
@@ -478,12 +485,11 @@ async def test_update_os_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """update_os returns an error string when the API call fails."""
+    """update_os propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["update_os"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["update_os"](ctx=mock_ctx)
 
 
 async def test_list_integrations_error(
@@ -491,14 +497,11 @@ async def test_list_integrations_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    list_integrations returns an error string when the API call fails.
-    """
+    """list_integrations propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_integrations"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_integrations"](ctx=mock_ctx)
 
 
 async def test_reload_integration_error(
@@ -506,16 +509,14 @@ async def test_reload_integration_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    reload_integration returns an error string when the API call fails.
-    """
+    """reload_integration propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["reload_integration"](
-        ctx=mock_ctx, entry_id="entry_id_1"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["reload_integration"](
+            ctx=mock_ctx,
+            entry_id="entry_id_1"
+        )
 
 
 async def test_get_system_health_error(
@@ -523,14 +524,11 @@ async def test_get_system_health_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_system_health returns an error string when the API call fails.
-    """
+    """get_system_health propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_system_health"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_system_health"](ctx=mock_ctx)
 
 
 async def test_list_users_error(
@@ -538,14 +536,11 @@ async def test_list_users_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    list_users returns an error string when the API call fails.
-    """
+    """list_users propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_users"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_users"](ctx=mock_ctx)
 
 
 async def test_create_backup_error(
@@ -553,14 +548,11 @@ async def test_create_backup_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    create_backup returns an error string when the API call fails.
-    """
+    """create_backup propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["create_backup"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["create_backup"](ctx=mock_ctx)
 
 
 async def test_list_backups_error(
@@ -568,11 +560,8 @@ async def test_list_backups_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    list_backups returns an error string when the API call fails.
-    """
+    """list_backups propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_backups"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_backups"](ctx=mock_ctx)

@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -19,7 +17,7 @@ def register(mcp: FastMCP) -> None:
     """Register all registry tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_device_registry(ctx: Context) -> list[dict[str, Any]] | str:
+    async def get_device_registry(ctx: Context) -> list[dict[str, Any]]:
         """
         List all devices in the Home Assistant device registry.
 
@@ -41,12 +39,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                "/api/config/device_registry/list"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            "/api/config/device_registry/list"
+        )
         return (
             response.get("devices", response)
             if isinstance(response, dict)
@@ -54,15 +49,15 @@ def register(mcp: FastMCP) -> None:
         )
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_config_entries(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_config_entries(ctx: Context) -> list[dict[str, Any]]:
         """
         List all integration config entries loaded in Home Assistant.
 
         Config entries represent installed integrations (e.g. Philips Hue,
         Google Cast, MQTT). Each entry includes entry_id, domain, title,
         disabled_by, and state. Possible state values: loaded, setup_error,
-        migration_error, setup_retry, failed_unload, not_loaded, disabled. Use
-        entry_id with reload_config_entry to reload a specific integration
+        migration_error, setup_retry, failed_unload, not_loaded, disabled.
+        Use entry_id with reload_config_entry to reload a specific integration
         without restarting HA.
 
         Args:
@@ -73,13 +68,13 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get("/api/config/config_entries/entry")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get("/api/config/config_entries/entry")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def reload_config_entry(ctx: Context, entry_id: str) -> dict[str, Any] | str:
+    async def reload_config_entry(
+        ctx: Context,
+        entry_id: str
+    ) -> dict[str, Any]:
         """
         Reload a single integration config entry without restarting HA.
 
@@ -98,9 +93,6 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.post(
-                f"/api/config/config_entries/entry/{entry_id}/reload"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.post(
+            f"/api/config/config_entries/entry/{entry_id}/reload"
+        )

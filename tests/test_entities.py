@@ -18,17 +18,25 @@ _STATES: list[dict[str, Any]] = [
     {
         "entity_id": "light.kitchen",
         "state": "on",
-        "attributes": {"friendly_name": "Kitchen Light", "brightness": 200},
+        "attributes": {
+            "friendly_name": "Kitchen Light",
+            "brightness": 200
+        },
     },
     {
         "entity_id": "switch.fan",
         "state": "off",
-        "attributes": {"friendly_name": "Ceiling Fan"},
+        "attributes": {
+            "friendly_name": "Ceiling Fan"
+        },
     },
     {
         "entity_id": "sensor.temperature",
         "state": "21.5",
-        "attributes": {"friendly_name": "Temp Sensor", "unit_of_measurement": "°C"},
+        "attributes": {
+            "friendly_name": "Temp Sensor",
+            "unit_of_measurement": "°C"
+        },
     },
 ]
 
@@ -48,7 +56,8 @@ async def test_list_entities_all(
     mock_client: MagicMock
 ) -> None:
     """
-    list_entities returns all states from /api/states when no domain filter is given.
+    list_entities returns all states from /api/states when no domain filter is
+    given.
     """
 
     mock_client.get.return_value = _STATES
@@ -98,8 +107,13 @@ async def test_get_entity(
     """
 
     mock_client.get.return_value = _STATES[0]
-    result = await tools["get_entity"](ctx=mock_ctx, entity_id="light.kitchen")
-    mock_client.get.assert_called_once_with("/api/states/light.kitchen")
+    result = await tools["get_entity"](
+        ctx=mock_ctx,
+        entity_id="light.kitchen"
+    )
+    mock_client.get.assert_called_once_with(
+        "/api/states/light.kitchen"
+    )
     assert result["entity_id"] == "light.kitchen"
 
 
@@ -120,7 +134,9 @@ async def test_set_entity_state(
     }
     mock_client.post.return_value = expected
     result = await tools["set_entity_state"](
-        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
+        ctx=mock_ctx,
+        entity_id="input_boolean.vacation_mode",
+        state="on"
     )
     mock_client.post.assert_called_once_with(
         "/api/states/input_boolean.vacation_mode",
@@ -248,9 +264,7 @@ async def test_search_entities_no_match(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    search_entities returns an empty list when no entity matches the keyword.
-    """
+    """search_entities returns an empty list when no entity matches the keyword."""
 
     mock_client.get.return_value = _STATES
     result = await tools["search_entities"](ctx=mock_ctx, query="zzznomatch")
@@ -293,7 +307,8 @@ async def test_list_devices_area_result_as_list(
     mock_client: MagicMock
 ) -> None:
     """
-    list_devices handles area_result already parsed as a list (not a JSON string).
+    list_devices handles area_result already parsed as a list (not a JSON
+    string).
     """
 
     mock_client.post.return_value = _AREA_ENTRIES
@@ -301,6 +316,20 @@ async def test_list_devices_area_result_as_list(
 
     result = await tools["list_devices"](ctx=mock_ctx)
     assert any(d["area_id"] == "kitchen" for d in result)
+
+
+async def test_list_devices_malformed_template_json(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """list_devices raises HomeAssistantError on malformed JSON from /api/template."""
+
+    mock_client.post.return_value = "{not valid json"
+    mock_client.get.return_value = _STATES
+
+    with pytest.raises(HomeAssistantError, match="malformed JSON"):
+        await tools["list_devices"](ctx=mock_ctx)
 
 
 async def test_list_entity_registry_only_area_entities(
@@ -367,6 +396,18 @@ async def test_list_areas_already_list(
     assert result == areas
 
 
+async def test_list_areas_malformed_template_json(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """list_areas raises HomeAssistantError on malformed JSON from /api/template."""
+
+    mock_client.post.return_value = "not json at all"
+    with pytest.raises(HomeAssistantError, match="malformed JSON"):
+        await tools["list_areas"](ctx=mock_ctx)
+
+
 async def test_get_entity_history_no_times(
     tools: dict[str, Any],
     mock_ctx: MagicMock,
@@ -394,9 +435,7 @@ async def test_get_entity_history_with_start(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_entity_history includes start_time in the URL path when provided.
-    """
+    """get_entity_history includes start_time in the URL path when provided."""
 
     mock_client.get.return_value = [[]]
     await tools["get_entity_history"](
@@ -442,7 +481,8 @@ async def test_get_logbook_no_filters(
     mock_client: MagicMock
 ) -> None:
     """
-    get_logbook fetches /api/logbook with no params when no arguments are provided.
+    get_logbook fetches /api/logbook with no params when no arguments are
+    provided.
     """
 
     entries = [{"name": "Kitchen Light", "message": "turned on"}]
@@ -523,9 +563,14 @@ async def test_fire_event_no_data(
     """
 
     mock_client.post.return_value = {"message": "Event fired."}
-    result = await tools["fire_event"](ctx=mock_ctx, event_type="my_custom_event")
+    result = await tools["fire_event"](
+        ctx=mock_ctx,
+        event_type="my_custom_event"
+    )
     assert "message" in result
-    mock_client.post.assert_called_once_with("/api/events/my_custom_event", {})
+    mock_client.post.assert_called_once_with(
+        "/api/events/my_custom_event", {}
+    )
 
 
 async def test_fire_event_with_data(
@@ -539,7 +584,10 @@ async def test_fire_event_with_data(
     await tools["fire_event"](
         ctx=mock_ctx, event_type="my_event", event_data={"key": "value"}
     )
-    mock_client.post.assert_called_once_with("/api/events/my_event", {"key": "value"})
+    mock_client.post.assert_called_once_with(
+        "/api/events/my_event",
+        {"key": "value"}
+    )
 
 
 async def test_list_entities_error(
@@ -547,12 +595,11 @@ async def test_list_entities_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_entities returns an error string when the API call fails."""
+    """list_entities propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_entities"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_entities"](ctx=mock_ctx)
 
 
 async def test_get_entity_error(
@@ -560,12 +607,14 @@ async def test_get_entity_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_entity returns an error string when the API call fails."""
+    """get_entity propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_entity"](ctx=mock_ctx, entity_id="light.kitchen")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_entity"](
+            ctx=mock_ctx,
+            entity_id="light.kitchen"
+        )
 
 
 async def test_set_entity_state_error(
@@ -573,14 +622,15 @@ async def test_set_entity_state_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_entity_state returns an error string when the API call fails."""
+    """set_entity_state propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_entity_state"](
-        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_entity_state"](
+            ctx=mock_ctx,
+            entity_id="input_boolean.vacation_mode",
+            state="on"
+        )
 
 
 async def test_call_service_error(
@@ -588,14 +638,13 @@ async def test_call_service_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """call_service returns an error string when the API call fails."""
+    """call_service propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["call_service"](
-        ctx=mock_ctx, domain="light", service="turn_on"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["call_service"](
+            ctx=mock_ctx, domain="light", service="turn_on"
+        )
 
 
 async def test_search_entities_error(
@@ -603,12 +652,11 @@ async def test_search_entities_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """search_entities returns an error string when the API call fails."""
+    """search_entities propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["search_entities"](ctx=mock_ctx, query="kitchen")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["search_entities"](ctx=mock_ctx, query="kitchen")
 
 
 async def test_list_services_error(
@@ -616,12 +664,11 @@ async def test_list_services_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_services returns an error string when the API call fails."""
+    """list_services propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_services"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_services"](ctx=mock_ctx)
 
 
 async def test_list_areas_error(
@@ -629,12 +676,11 @@ async def test_list_areas_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_areas returns an error string when the API call fails."""
+    """list_areas propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_areas"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_areas"](ctx=mock_ctx)
 
 
 async def test_list_devices_error(
@@ -642,12 +688,11 @@ async def test_list_devices_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_devices returns an error string when the API call fails."""
+    """list_devices propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_devices"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_devices"](ctx=mock_ctx)
 
 
 async def test_list_entity_registry_error(
@@ -655,14 +700,11 @@ async def test_list_entity_registry_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    list_entity_registry returns an error string when the API call fails.
-    """
+    """list_entity_registry propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_entity_registry"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_entity_registry"](ctx=mock_ctx)
 
 
 async def test_get_entity_history_error(
@@ -670,14 +712,13 @@ async def test_get_entity_history_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_entity_history returns an error string when the API call fails."""
+    """get_entity_history propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_entity_history"](
-        ctx=mock_ctx, entity_id="sensor.temperature"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_entity_history"](
+            ctx=mock_ctx, entity_id="sensor.temperature"
+        )
 
 
 async def test_get_logbook_error(
@@ -685,27 +726,24 @@ async def test_get_logbook_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_logbook returns an error string when the API call fails."""
+    """get_logbook propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_logbook"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_logbook"](ctx=mock_ctx)
 
 
 async def test_render_template_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """render_template returns an error string when the API call fails."""
+    """render_template propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["render_template"](
-        ctx=mock_ctx, template="{{ states('sensor.temperature') }}"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["render_template"](
+            ctx=mock_ctx, template="{{ states('sensor.temperature') }}"
+        )
 
 
 async def test_fire_event_error(
@@ -713,11 +751,11 @@ async def test_fire_event_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """fire_event returns an error string when the API call fails."""
+    """fire_event propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["fire_event"](
-        ctx=mock_ctx, event_type="my_custom_event"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["fire_event"](
+            ctx=mock_ctx,
+            event_type="my_custom_event"
+        )

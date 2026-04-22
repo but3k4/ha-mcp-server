@@ -9,6 +9,8 @@ available over REST in YAML-mode installations.
 
 from __future__ import annotations
 
+import asyncio
+import json
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
@@ -19,6 +21,7 @@ if TYPE_CHECKING:
 
 _WEBSOCKET_PATH = "/api/websocket"
 _HTTP_ERROR_THRESHOLD = 400
+_WS_COMMAND_TIMEOUT_SECONDS = 30
 
 
 class HomeAssistantError(Exception):
@@ -36,7 +39,9 @@ async def _parse_response(response: aiohttp.ClientResponse) -> Any:
         Parsed JSON body, or raw text if the body is not JSON.
 
     Raises:
-        HomeAssistantError: If the HTTP status code indicates an error.
+        HomeAssistantError: If the HTTP status code indicates an error or the
+                            body cannot be parsed as JSON despite advertising
+                            application/json.
     """
 
     if response.status >= _HTTP_ERROR_THRESHOLD:
@@ -48,7 +53,12 @@ async def _parse_response(response: aiohttp.ClientResponse) -> Any:
     content_type = response.headers.get("Content-Type", "")
 
     if "application/json" in content_type:
-        return await response.json()
+        try:
+            return await response.json()
+        except json.JSONDecodeError as exc:
+            raise HomeAssistantError(
+                f"Invalid JSON response from {response.url}"
+            ) from exc
 
     return await response.text()
 
@@ -158,10 +168,12 @@ class HomeAssistantClient:
         """
         Send a single command over the HA WebSocket API and return its result.
 
-        Opens a fresh WebSocket connection for each call, completes the HA
-        auth handshake, sends one command message, waits for the matching
-        result, then closes the connection. Unlike the HTTP methods this
-        does *not* require the client to be used as an async context manager.
+        Opens a fresh WebSocket connection for each call, completes the HA auth
+        handshake, sends one command message, waits for the matching result
+        message, then closes the connection. Intermediate messages (events,
+        progress updates) sharing the same id are skipped; only the terminal
+        type="result" frame satisfies the wait. A timeout prevents the receive
+        loop from hanging indefinitely if HA never produces a result.
 
         Args:
             msg_type: HA WebSocket command type, e.g. lovelace/config or
@@ -174,8 +186,9 @@ class HomeAssistantClient:
             commands that return no data (e.g. config/save).
 
         Raises:
-            HomeAssistantError: If authentication is rejected or the command
-                                returns success: false.
+            HomeAssistantError: If authentication is rejected, the command
+                                returns success: false, or no result message
+                                arrives within the timeout window.
         """
 
         parsed = urlparse(self._base_url)
@@ -196,17 +209,29 @@ class HomeAssistantClient:
             await ws.send_json({"type": "auth", "access_token": self._token})
             auth_msg = await ws.receive_json()
             if auth_msg.get("type") != "auth_ok":
-                raise HomeAssistantError(
-                    f"WebSocket authentication failed: {auth_msg}"
-                )
+                raise HomeAssistantError(f"WebSocket authentication failed: {auth_msg}")
 
             cmd_id = 1
             await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
 
-            while True:
-                msg = await ws.receive_json()
-                if msg.get("id") == cmd_id:
-                    break
+            async def _await_result() -> dict[str, Any]:
+                while True:
+                    msg = await ws.receive_json()
+                    if (
+                        msg.get("id") == cmd_id
+                        and msg.get("type") == "result"
+                    ):
+                        return msg
+
+            try:
+                msg = await asyncio.wait_for(
+                    _await_result(), timeout=_WS_COMMAND_TIMEOUT_SECONDS
+                )
+            except TimeoutError as exc:
+                raise HomeAssistantError(
+                    f"WS command {msg_type!r} timed out after "
+                    f"{_WS_COMMAND_TIMEOUT_SECONDS}s"
+                ) from exc
 
             if not msg.get("success"):
                 error = msg.get("error", {})
@@ -233,5 +258,6 @@ class HomeAssistantClient:
 
         session = self._require_session()
         url = f"{self._base_url}{path}"
+
         async with session.delete(url) as response:
             return await _parse_response(response)

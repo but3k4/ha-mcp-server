@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -14,17 +15,37 @@ from ha_mcp.tools import helpers
 from tests.conftest import ToolCapture
 
 _STATES: list[dict[str, Any]] = [
-    {"entity_id": "input_boolean.vacation_mode", "state": "off", "attributes": {}},
-    {"entity_id": "input_number.target_temp", "state": "21.0", "attributes": {}},
+    {
+        "entity_id": "input_boolean.vacation_mode",
+        "state": "off", "attributes": {}
+    },
+    {
+        "entity_id": "input_number.target_temp",
+        "state": "21.0", "attributes": {}
+    },
     {
         "entity_id": "input_select.preset",
         "state": "Home",
-        "attributes": {"options": ["Home", "Away"]},
+        "attributes": {
+            "options": ["Home", "Away"]
+        },
     },
-    {"entity_id": "input_text.label", "state": "hello", "attributes": {}},
-    {"entity_id": "input_datetime.alarm", "state": "07:00:00", "attributes": {}},
-    {"entity_id": "timer.cooking", "state": "idle", "attributes": {}},
-    {"entity_id": "light.kitchen", "state": "on", "attributes": {}},
+    {
+        "entity_id": "input_text.label",
+        "state": "hello", "attributes": {}
+    },
+    {
+        "entity_id": "input_datetime.alarm",
+        "state": "07:00:00", "attributes": {}
+    },
+    {
+        "entity_id": "timer.cooking",
+        "state": "idle", "attributes": {}
+    },
+    {
+        "entity_id": "light.kitchen",
+        "state": "on", "attributes": {}
+    },
 ]
 
 
@@ -61,11 +82,15 @@ async def test_list_input_helpers_domain_filter(
     mock_client: MagicMock
 ) -> None:
     """
-    list_input_helpers filters to a single domain when the domain argument is given.
+    list_input_helpers filters to a single domain when the domain argument is
+    given.
     """
 
     mock_client.get.return_value = _STATES
-    result = await tools["list_input_helpers"](ctx=mock_ctx, domain="input_boolean")
+    result = await tools["list_input_helpers"](
+        ctx=mock_ctx,
+        domain="input_boolean"
+    )
     assert len(result) == 1
     assert result[0]["entity_id"] == "input_boolean.vacation_mode"
 
@@ -78,7 +103,10 @@ async def test_list_input_helpers_timer_domain(
     """list_input_helpers accepts 'timer' as a valid domain filter."""
 
     mock_client.get.return_value = _STATES
-    result = await tools["list_input_helpers"](ctx=mock_ctx, domain="timer")
+    result = await tools["list_input_helpers"](
+        ctx=mock_ctx,
+        domain="timer"
+    )
     assert len(result) == 1
     assert result[0]["entity_id"] == "timer.cooking"
 
@@ -92,7 +120,9 @@ async def test_set_input_boolean_on(
 
     mock_client.post.return_value = []
     await tools["set_input_boolean"](
-        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
+        ctx=mock_ctx,
+        entity_id="input_boolean.vacation_mode",
+        state="on"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/input_boolean/turn_on",
@@ -109,7 +139,9 @@ async def test_set_input_boolean_off(
 
     mock_client.post.return_value = []
     await tools["set_input_boolean"](
-        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="off"
+        ctx=mock_ctx,
+        entity_id="input_boolean.vacation_mode",
+        state="off"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/input_boolean/turn_off",
@@ -122,15 +154,15 @@ async def test_set_input_boolean_invalid_state(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    set_input_boolean returns an error string when state is not 'on' or 'off'.
-    """
+    """set_input_boolean raises ValueError when state is not 'on' or 'off'."""
 
-    result = await tools["set_input_boolean"](
-        ctx=mock_ctx, entity_id="input_boolean.x", state="toggle"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(ValueError, match="'on' or 'off'"):
+        await tools["set_input_boolean"](
+            ctx=mock_ctx,
+            entity_id="input_boolean.x",
+            state="toggle"
+        )
+    mock_client.post.assert_not_called()
 
 
 async def test_set_input_number(
@@ -150,6 +182,38 @@ async def test_set_input_number(
     )
 
 
+async def test_set_input_number_rejects_nan(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """set_input_number raises ValueError when value is NaN."""
+
+    with pytest.raises(ValueError, match="finite"):
+        await tools["set_input_number"](
+            ctx=mock_ctx,
+            entity_id="input_number.target_temp",
+            value=float("nan"),
+        )
+    mock_client.post.assert_not_called()
+
+
+async def test_set_input_number_rejects_infinity(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """set_input_number raises ValueError when value is infinity."""
+
+    with pytest.raises(ValueError, match="finite"):
+        await tools["set_input_number"](
+            ctx=mock_ctx,
+            entity_id="input_number.target_temp",
+            value=math.inf,
+        )
+    mock_client.post.assert_not_called()
+
+
 async def test_set_input_select(
     tools: dict[str, Any],
     mock_ctx: MagicMock,
@@ -161,7 +225,9 @@ async def test_set_input_select(
 
     mock_client.post.return_value = []
     await tools["set_input_select"](
-        ctx=mock_ctx, entity_id="input_select.preset", option="Away"
+        ctx=mock_ctx,
+        entity_id="input_select.preset",
+        option="Away"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/input_select/select_option",
@@ -169,10 +235,25 @@ async def test_set_input_select(
     )
 
 
-async def test_set_input_text(
+async def test_set_input_select_rejects_empty(
     tools: dict[str, Any],
     mock_ctx: MagicMock,
     mock_client: MagicMock
+) -> None:
+    """set_input_select raises ValueError when option is an empty string."""
+
+    with pytest.raises(ValueError, match="empty"):
+        await tools["set_input_select"](
+            ctx=mock_ctx,
+            entity_id="input_select.preset",
+            option=""
+        )
+    mock_client.post.assert_not_called()
+
+
+async def test_set_input_text(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     set_input_text calls input_text/set_value with the provided string value.
@@ -180,7 +261,9 @@ async def test_set_input_text(
 
     mock_client.post.return_value = []
     await tools["set_input_text"](
-        ctx=mock_ctx, entity_id="input_text.label", value="Welcome home!"
+        ctx=mock_ctx,
+        entity_id="input_text.label",
+        value="Welcome home!"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/input_text/set_value",
@@ -190,8 +273,7 @@ async def test_set_input_text(
 
 async def test_set_input_datetime_time_only(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     set_input_datetime sends only the 'time' field when date and datetime_str
@@ -233,6 +315,20 @@ async def test_set_input_datetime_full(
             "datetime": "2025-01-01 08:00:00",
         },
     )
+
+
+async def test_set_input_datetime_requires_field(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock
+) -> None:
+    """set_input_datetime raises ValueError when no date/time field is set."""
+
+    with pytest.raises(ValueError, match="At least one"):
+        await tools["set_input_datetime"](
+            ctx=mock_ctx, entity_id="input_datetime.alarm"
+        )
+    mock_client.post.assert_not_called()
 
 
 async def test_start_timer_no_duration(
@@ -304,12 +400,11 @@ async def test_list_input_helpers_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_input_helpers returns an error string when the API call fails."""
+    """list_input_helpers propagates HomeAssistantError on API failure."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_input_helpers"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_input_helpers"](ctx=mock_ctx)
 
 
 async def test_set_input_boolean_error(
@@ -317,14 +412,13 @@ async def test_set_input_boolean_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_input_boolean returns an error string when the API call fails."""
+    """set_input_boolean propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_input_boolean"](
-        ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_input_boolean"](
+            ctx=mock_ctx, entity_id="input_boolean.vacation_mode", state="on"
+        )
 
 
 async def test_set_input_number_error(
@@ -332,14 +426,13 @@ async def test_set_input_number_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_input_number returns an error string when the API call fails."""
+    """set_input_number propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_input_number"](
-        ctx=mock_ctx, entity_id="input_number.target_temp", value=22.5
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_input_number"](
+            ctx=mock_ctx, entity_id="input_number.target_temp", value=22.5
+        )
 
 
 async def test_set_input_select_error(
@@ -347,14 +440,13 @@ async def test_set_input_select_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_input_select returns an error string when the API call fails."""
+    """set_input_select propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_input_select"](
-        ctx=mock_ctx, entity_id="input_select.preset", option="Away"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_input_select"](
+            ctx=mock_ctx, entity_id="input_select.preset", option="Away"
+        )
 
 
 async def test_set_input_text_error(
@@ -362,14 +454,13 @@ async def test_set_input_text_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_input_text returns an error string when the API call fails."""
+    """set_input_text propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_input_text"](
-        ctx=mock_ctx, entity_id="input_text.label", value="hello"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_input_text"](
+            ctx=mock_ctx, entity_id="input_text.label", value="hello"
+        )
 
 
 async def test_set_input_datetime_error(
@@ -377,14 +468,13 @@ async def test_set_input_datetime_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """set_input_datetime returns an error string when the API call fails."""
+    """set_input_datetime propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["set_input_datetime"](
-        ctx=mock_ctx, entity_id="input_datetime.alarm", time="07:00:00"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["set_input_datetime"](
+            ctx=mock_ctx, entity_id="input_datetime.alarm", time="07:00:00"
+        )
 
 
 async def test_start_timer_error(
@@ -392,12 +482,11 @@ async def test_start_timer_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """start_timer returns an error string when the API call fails."""
+    """start_timer propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["start_timer"](ctx=mock_ctx, entity_id="timer.cooking")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["start_timer"](ctx=mock_ctx, entity_id="timer.cooking")
 
 
 async def test_pause_timer_error(
@@ -405,14 +494,11 @@ async def test_pause_timer_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """pause_timer returns an error string when the API call fails."""
+    """pause_timer propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["pause_timer"](
-        ctx=mock_ctx, entity_id="timer.cooking"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["pause_timer"](ctx=mock_ctx, entity_id="timer.cooking")
 
 
 async def test_cancel_timer_error(
@@ -420,11 +506,8 @@ async def test_cancel_timer_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """cancel_timer returns an error string when the API call fails."""
+    """cancel_timer propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["cancel_timer"](
-        ctx=mock_ctx, entity_id="timer.cooking"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["cancel_timer"](ctx=mock_ctx, entity_id="timer.cooking")

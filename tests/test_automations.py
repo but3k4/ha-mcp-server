@@ -37,7 +37,8 @@ async def test_list_automations_filters_domain(
     mock_client: MagicMock
 ) -> None:
     """
-    list_automations returns only entities whose entity_id starts with 'automation.'.
+    list_automations returns only entities whose entity_id starts with
+    'automation.'.
     """
 
     mock_client.get.return_value = _STATES
@@ -52,10 +53,13 @@ async def test_list_automations_empty(
     mock_client: MagicMock
 ) -> None:
     """
-    list_automations returns an empty list when no automation entities are present.
+    list_automations returns an empty list when no automation entities are
+    present.
     """
 
-    mock_client.get.return_value = [{"entity_id": "light.kitchen", "state": "on"}]
+    mock_client.get.return_value = [
+        {"entity_id": "light.kitchen", "state": "on"}
+    ]
     result = await tools["list_automations"](ctx=mock_ctx)
     assert result == []
 
@@ -84,10 +88,15 @@ async def test_enable_automation(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """enable_automation calls the automation/turn_on service with the entity_id."""
+    """
+    enable_automation calls the automation/turn_on service with the entity_id.
+    """
 
     mock_client.post.return_value = []
-    await tools["enable_automation"](ctx=mock_ctx, entity_id="automation.goodnight")
+    await tools["enable_automation"](
+        ctx=mock_ctx,
+        entity_id="automation.goodnight"
+    )
     mock_client.post.assert_called_once_with(
         "/api/services/automation/turn_on",
         {"entity_id": "automation.goodnight"},
@@ -105,7 +114,8 @@ async def test_disable_automation(
 
     mock_client.post.return_value = []
     await tools["disable_automation"](
-        ctx=mock_ctx, entity_id="automation.goodnight"
+        ctx=mock_ctx,
+        entity_id="automation.goodnight"
     )
     mock_client.post.assert_called_once_with(
         "/api/services/automation/turn_off",
@@ -204,7 +214,9 @@ async def test_list_scenes_filters_domain(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_scenes returns only entities whose entity_id starts with 'scene.'."""
+    """
+    list_scenes returns only entities whose entity_id starts with 'scene.'.
+    """
 
     mock_client.get.return_value = _STATES
     result = await tools["list_scenes"](ctx=mock_ctx)
@@ -232,12 +244,11 @@ async def test_list_automations_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_automations returns an error string when the API call fails."""
+    """list_automations propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_automations"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_automations"](ctx=mock_ctx)
 
 
 async def test_trigger_automation_error(
@@ -245,14 +256,13 @@ async def test_trigger_automation_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """trigger_automation returns an error string when the API call fails."""
+    """trigger_automation propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["trigger_automation"](
-        ctx=mock_ctx, entity_id="automation.morning_lights"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["trigger_automation"](
+            ctx=mock_ctx, entity_id="automation.morning_lights"
+        )
 
 
 async def test_enable_automation_error(
@@ -260,14 +270,13 @@ async def test_enable_automation_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """enable_automation returns an error string when the API call fails."""
+    """enable_automation propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["enable_automation"](
-        ctx=mock_ctx, entity_id="automation.goodnight"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["enable_automation"](
+            ctx=mock_ctx, entity_id="automation.goodnight"
+        )
 
 
 async def test_disable_automation_error(
@@ -275,14 +284,13 @@ async def test_disable_automation_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """disable_automation returns an error string when the API call fails."""
+    """disable_automation propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["disable_automation"](
-        ctx=mock_ctx, entity_id="automation.goodnight"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["disable_automation"](
+            ctx=mock_ctx, entity_id="automation.goodnight"
+        )
 
 
 async def test_reload_automations_error(
@@ -290,12 +298,11 @@ async def test_reload_automations_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """reload_automations returns an error string when the API call fails."""
+    """reload_automations propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["reload_automations"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["reload_automations"](ctx=mock_ctx)
 
 
 async def test_list_scripts_error(
@@ -303,12 +310,11 @@ async def test_list_scripts_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_scripts returns an error string when the API call fails."""
+    """list_scripts propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_scripts"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_scripts"](ctx=mock_ctx)
 
 
 async def test_run_script_error(
@@ -316,14 +322,14 @@ async def test_run_script_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """run_script returns an error string when the API call fails."""
+    """run_script propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["run_script"](
-        ctx=mock_ctx, entity_id="script.goodnight"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["run_script"](
+            ctx=mock_ctx,
+            entity_id="script.goodnight"
+        )
 
 
 async def test_list_scenes_error(
@@ -331,12 +337,11 @@ async def test_list_scenes_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_scenes returns an error string when the API call fails."""
+    """list_scenes propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_scenes"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_scenes"](ctx=mock_ctx)
 
 
 async def test_activate_scene_error(
@@ -344,11 +349,11 @@ async def test_activate_scene_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """activate_scene returns an error string when the API call fails."""
+    """activate_scene propagates HomeAssistantError when the API call fails."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["activate_scene"](
-        ctx=mock_ctx, entity_id="scene.movie_time"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["activate_scene"](
+            ctx=mock_ctx,
+            entity_id="scene.movie_time"
+        )

@@ -19,7 +19,13 @@ _DASHBOARDS: list[dict[str, Any]] = [
 ]
 
 _CONFIG: dict[str, Any] = {
-    "title": "Home", "views": [{"title": "Main", "cards": []}]
+    "title": "Home",
+    "views": [
+        {
+            "title": "Main",
+            "cards": []
+        }
+    ]
 }
 
 
@@ -33,9 +39,7 @@ def tools() -> dict[str, Any]:
 
 
 async def test_list_dashboards(
-    tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    tools: dict[str, Any], mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """list_dashboards calls lovelace/dashboards/list and returns the result."""
 
@@ -66,14 +70,13 @@ async def test_get_dashboard_config_named(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_dashboard_config passes url_path for non-default dashboards.
-    """
+    """get_dashboard_config passes url_path for non-default dashboards."""
 
     mock_client.ws_command.return_value = _CONFIG
     await tools["get_dashboard_config"](ctx=mock_ctx, url_path="kiosk")
     mock_client.ws_command.assert_called_once_with(
-        "lovelace/config", url_path="kiosk"
+        "lovelace/config",
+        url_path="kiosk"
     )
 
 
@@ -101,7 +104,9 @@ async def test_create_dashboard_minimal(
     are omitted.
     """
 
-    mock_client.ws_command.return_value = {"url_path": "new-dash", "title": "New"}
+    mock_client.ws_command.return_value = {
+        "url_path": "new-dash", "title": "New"
+    }
     result = await tools["create_dashboard"](
         ctx=mock_ctx, url_path="new-dash", title="New"
     )
@@ -117,8 +122,7 @@ async def test_create_dashboard_minimal(
 
 async def test_create_dashboard_with_icon(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """
     create_dashboard includes icon and custom sidebar/admin flags when provided.
@@ -145,12 +149,15 @@ async def test_update_dashboard_config_default(
     mock_client: MagicMock
 ) -> None:
     """
-    update_dashboard_config sends lovelace/config/save with config only when
-    no url_path is given.
+    update_dashboard_config sends lovelace/config/save with config only when no
+    url_path is given.
     """
 
     mock_client.ws_command.return_value = None
-    result = await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
+    result = await tools["update_dashboard_config"](
+        ctx=mock_ctx,
+        config=_CONFIG
+    )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/config/save",
         config=_CONFIG,
@@ -160,8 +167,7 @@ async def test_update_dashboard_config_default(
 
 async def test_update_dashboard_config_named(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
     """update_dashboard_config includes url_path for named dashboards."""
 
@@ -188,7 +194,8 @@ async def test_delete_dashboard(
 
     mock_client.ws_command.return_value = None
     result = await tools["delete_dashboard"](
-        ctx=mock_ctx, dashboard_id="dashboard_old"
+        ctx=mock_ctx,
+        dashboard_id="dashboard_old"
     )
     mock_client.ws_command.assert_called_once_with(
         "lovelace/dashboards/delete",
@@ -245,15 +252,13 @@ async def test_update_dashboard_multiple_fields(
 
 async def test_list_dashboards_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """list_dashboards returns an error string when the WebSocket call fails."""
+    """list_dashboards propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["list_dashboards"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["list_dashboards"](ctx=mock_ctx)
 
 
 async def test_get_dashboard_config_error(
@@ -261,14 +266,11 @@ async def test_get_dashboard_config_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    get_dashboard_config returns an error string when the WebSocket call fails.
-    """
+    """get_dashboard_config propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["get_dashboard_config"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["get_dashboard_config"](ctx=mock_ctx)
 
 
 async def test_create_dashboard_error(
@@ -276,14 +278,13 @@ async def test_create_dashboard_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """create_dashboard returns an error string when the WebSocket call fails."""
+    """create_dashboard propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["create_dashboard"](
-        ctx=mock_ctx, url_path="new-dash", title="New"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["create_dashboard"](
+            ctx=mock_ctx, url_path="new-dash", title="New"
+        )
 
 
 async def test_update_dashboard_config_error(
@@ -291,29 +292,24 @@ async def test_update_dashboard_config_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    update_dashboard_config returns an error string when the WebSocket call fails.
-    """
+    """update_dashboard_config propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
 
 
 async def test_update_dashboard_error(
     tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
+    mock_ctx: MagicMock, mock_client: MagicMock
 ) -> None:
-    """update_dashboard returns an error string when the WebSocket call fails."""
+    """update_dashboard propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["update_dashboard"](
-        ctx=mock_ctx, dashboard_id="dashboard_ios", title="Tablet"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["update_dashboard"](
+            ctx=mock_ctx, dashboard_id="dashboard_ios", title="Tablet"
+        )
 
 
 async def test_delete_dashboard_error(
@@ -321,9 +317,11 @@ async def test_delete_dashboard_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """delete_dashboard returns an error string when the WebSocket call fails."""
+    """delete_dashboard propagates HomeAssistantError on WebSocket failure."""
 
     mock_client.ws_command.side_effect = HomeAssistantError("ws failure")
-    result = await tools["delete_dashboard"](ctx=mock_ctx, dashboard_id="dashboard_old")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="ws failure"):
+        await tools["delete_dashboard"](
+            ctx=mock_ctx,
+            dashboard_id="dashboard_old"
+        )

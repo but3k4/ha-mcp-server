@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import Context
 from mcp.types import ToolAnnotations
 
-from ha_mcp.client import HomeAssistantError
-
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
@@ -26,7 +24,7 @@ def register(mcp: FastMCP) -> None:
     """Register all add-on management tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_addons(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_addons(ctx: Context) -> list[dict[str, Any]]:
         """
         List all available and installed Home Assistant add-ons.
 
@@ -43,14 +41,11 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/addons")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/addons")
         return response.get("data", {}).get("addons", [])
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_addon_info(ctx: Context, addon_slug: str) -> dict[str, Any] | str:
+    async def get_addon_info(ctx: Context, addon_slug: str) -> dict[str, Any]:
         """
         Get detailed information about a specific add-on.
 
@@ -69,12 +64,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/info"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/info"
+        )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -93,12 +85,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/install"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/install"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
@@ -117,12 +106,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/uninstall"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/uninstall"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -141,12 +127,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/update"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/update"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -165,12 +148,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/start"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/start"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -189,12 +169,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/stop"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/stop"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -213,12 +190,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/restart"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/restart"
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
@@ -239,10 +213,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            return await client.get(f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/logs")
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        return await client.get(f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/logs")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_addon_options(
@@ -268,17 +239,14 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/options",
-                {"options": options},
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/options",
+            {"options": options},
+        )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_addon_repositories(ctx: Context) -> list[dict[str, Any]] | str:
+    async def list_addon_repositories(ctx: Context) -> list[dict[str, Any]]:
         """
         List all configured add-on repositories (stores).
 
@@ -292,12 +260,9 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.get(
-                f"{_SUPERVISOR_PREFIX}/store/repositories"
-            )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+        response: dict[str, Any] = await client.get(
+            f"{_SUPERVISOR_PREFIX}/store/repositories"
+        )
         return response.get("data", {}).get("repositories", [])
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -306,22 +271,30 @@ def register(mcp: FastMCP) -> None:
         Add a third-party add-on repository to Home Assistant.
 
         Requires a Supervisor-enabled installation (HA OS or Supervised).
+        Only HTTPS URLs are accepted to prevent sending unvalidated schemes
+        (e.g. file:// or javascript:) to the Supervisor.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
-            repository_url: Git URL of the repository, e.g.
-                            https://github.com/owner/repo.
+            repository_url: HTTPS Git URL of the repository,
+                            e.g. https://github.com/owner/repo.
 
         Returns:
             Confirmation message.
+
+        Raises:
+            ValueError: If repository_url does not start with https://.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        try:
-            response: dict[str, Any] = await client.post(
-                f"{_SUPERVISOR_PREFIX}/store/repositories",
-                {"repository": repository_url},
+        if not repository_url.startswith("https://"):
+            raise ValueError(
+                "repository_url must start with https://, "
+                f"got {repository_url!r}"
             )
-        except HomeAssistantError as exc:
-            return f"Error: {exc}"
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        response: dict[str, Any] = await client.post(
+            f"{_SUPERVISOR_PREFIX}/store/repositories",
+            {"repository": repository_url},
+        )
         return response.get("result", str(response))

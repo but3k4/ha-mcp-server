@@ -95,12 +95,11 @@ async def test_get_error_log_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_error_log returns an error string when the API call fails."""
+    """get_error_log propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_error_log"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_error_log"](ctx=mock_ctx)
 
 
 async def test_get_supervisor_logs_error(
@@ -108,12 +107,11 @@ async def test_get_supervisor_logs_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_supervisor_logs returns an error string when the API call fails."""
+    """get_supervisor_logs propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_supervisor_logs"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_supervisor_logs"](ctx=mock_ctx)
 
 
 async def test_get_core_logs_error(
@@ -121,12 +119,11 @@ async def test_get_core_logs_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_core_logs returns an error string when the API call fails."""
+    """get_core_logs propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_core_logs"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_core_logs"](ctx=mock_ctx)
 
 
 async def test_get_host_logs_error(
@@ -134,12 +131,11 @@ async def test_get_host_logs_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_host_logs returns an error string when the API call fails."""
+    """get_host_logs propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_host_logs"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_host_logs"](ctx=mock_ctx)
 
 
 async def test_get_multicast_logs_error(
@@ -147,9 +143,8 @@ async def test_get_multicast_logs_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """get_multicast_logs returns an error string when the API call fails."""
+    """get_multicast_logs propagates HomeAssistantError when the API call fails."""
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["get_multicast_logs"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["get_multicast_logs"](ctx=mock_ctx)

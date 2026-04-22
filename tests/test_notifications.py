@@ -14,17 +14,32 @@ from ha_mcp.tools import notifications
 from tests.conftest import ToolCapture
 
 _SERVICES: list[dict[str, Any]] = [
-    {"domain": "notify", "services": {"notify": {}, "mobile_app_my_phone": {}}},
-    {"domain": "light", "services": {"turn_on": {}}},
+    {
+        "domain": "notify",
+        "services": {
+            "notify": {},
+            "mobile_app_my_phone": {}
+        }
+    },
+    {
+        "domain": "light",
+        "services": {"turn_on": {}}
+    },
 ]
 
 _STATES: list[dict[str, Any]] = [
     {
         "entity_id": "persistent_notification.alert1",
         "state": "notifying",
-        "attributes": {"message": "Update available", "title": "HA Update"},
+        "attributes": {
+            "message": "Update available",
+            "title": "HA Update"
+        },
     },
-    {"entity_id": "light.kitchen", "state": "on", "attributes": {}},
+    {
+        "entity_id": "light.kitchen",
+        "state": "on", "attributes": {}
+    },
 ]
 
 
@@ -77,8 +92,8 @@ async def test_send_notification_minimal(
     mock_client: MagicMock
 ) -> None:
     """
-    send_notification posts to notify/notify with only the message when no
-    extras given.
+    send_notification posts to notify/notify with only the message when no extras
+    given.
     """
 
     mock_client.post.return_value = []
@@ -125,7 +140,8 @@ async def test_list_persistent_notifications(
     mock_client: MagicMock
 ) -> None:
     """
-    list_persistent_notifications returns only persistent_notification.* entities.
+    list_persistent_notifications returns only persistent_notification.*
+    entities.
     """
 
     mock_client.get.return_value = _STATES
@@ -140,7 +156,8 @@ async def test_create_persistent_notification_minimal(
     mock_client: MagicMock
 ) -> None:
     """
-    create_persistent_notification posts with message only when no title or id given.
+    create_persistent_notification posts with message only when no title or id
+    given.
     """
 
     mock_client.post.return_value = []
@@ -159,7 +176,8 @@ async def test_create_persistent_notification_full(
     mock_client: MagicMock
 ) -> None:
     """
-    create_persistent_notification includes title and notification_id when provided.
+    create_persistent_notification includes title and notification_id when
+    provided.
     """
 
     mock_client.post.return_value = []
@@ -205,13 +223,12 @@ async def test_list_notification_services_error(
     mock_client: MagicMock
 ) -> None:
     """
-    list_notification_services returns an error string when the API call fails.
+    list_notification_services propagates HomeAssistantError on API failure.
     """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_notification_services"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_notification_services"](ctx=mock_ctx)
 
 
 async def test_send_notification_error(
@@ -219,14 +236,11 @@ async def test_send_notification_error(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """
-    send_notification returns an error string when the API call fails.
-    """
+    """send_notification propagates HomeAssistantError on API failure."""
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["send_notification"](ctx=mock_ctx, message="Hello")
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["send_notification"](ctx=mock_ctx, message="Hello")
 
 
 async def test_list_persistent_notifications_error(
@@ -235,13 +249,12 @@ async def test_list_persistent_notifications_error(
     mock_client: MagicMock
 ) -> None:
     """
-    list_persistent_notifications returns an error string when the API call fails.
+    list_persistent_notifications propagates HomeAssistantError on API failure.
     """
 
     mock_client.get.side_effect = HomeAssistantError("api failure")
-    result = await tools["list_persistent_notifications"](ctx=mock_ctx)
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["list_persistent_notifications"](ctx=mock_ctx)
 
 
 async def test_create_persistent_notification_error(
@@ -250,15 +263,14 @@ async def test_create_persistent_notification_error(
     mock_client: MagicMock
 ) -> None:
     """
-    create_persistent_notification returns an error string when the API call fails.
+    create_persistent_notification propagates HomeAssistantError on API failure.
     """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["create_persistent_notification"](
-        ctx=mock_ctx, message="Backup complete"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["create_persistent_notification"](
+            ctx=mock_ctx, message="Backup complete"
+        )
 
 
 async def test_dismiss_persistent_notification_error(
@@ -267,12 +279,11 @@ async def test_dismiss_persistent_notification_error(
     mock_client: MagicMock
 ) -> None:
     """
-    dismiss_persistent_notification returns an error string when the API call fails.
+    dismiss_persistent_notification propagates HomeAssistantError on API failure.
     """
 
     mock_client.post.side_effect = HomeAssistantError("api failure")
-    result = await tools["dismiss_persistent_notification"](
-        ctx=mock_ctx, notification_id="ha_update"
-    )
-    assert isinstance(result, str)
-    assert result.startswith("Error:")
+    with pytest.raises(HomeAssistantError, match="api failure"):
+        await tools["dismiss_persistent_notification"](
+            ctx=mock_ctx, notification_id="ha_update"
+        )

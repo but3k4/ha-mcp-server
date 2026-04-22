@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 from aioresponses import aioresponses
 import pytest
@@ -36,8 +41,7 @@ async def test_get_with_params() -> None:
         )
         async with HomeAssistantClient(BASE_URL, TOKEN) as client:
             result = await client.get(
-                "/api/history/period",
-                params={"filter_entity_id": "light.a"}
+                "/api/history/period", params={"filter_entity_id": "light.a"}
             )
     assert result == []
 
@@ -58,7 +62,8 @@ async def test_get_non_json_returns_text() -> None:
 
 async def test_get_401_raises_error() -> None:
     """
-    A 401 response raises HomeAssistantError with the status code in the message.
+    A 401 response raises HomeAssistantError with the status code in the
+    message.
     """
 
     with aioresponses() as m:
@@ -70,16 +75,36 @@ async def test_get_401_raises_error() -> None:
 
 async def test_get_404_raises_error() -> None:
     """
-    A 404 response raises HomeAssistantError with the status code in the message.
+    A 404 response raises HomeAssistantError with the status code in the
+    message.
     """
 
     with aioresponses() as m:
         m.get(
-            f"{BASE_URL}/api/states/light.missing", status=404, body="Not found"
+            f"{BASE_URL}/api/states/light.missing",
+            status=404,
+            body="Not found"
         )
         async with HomeAssistantClient(BASE_URL, TOKEN) as client:
             with pytest.raises(HomeAssistantError, match="404"):
                 await client.get("/api/states/light.missing")
+
+
+async def test_get_malformed_json_body_raises() -> None:
+    """
+    A 200 response advertising application/json but with a malformed body
+    raises HomeAssistantError rather than letting the JSONDecodeError leak.
+    """
+
+    with aioresponses() as m:
+        m.get(
+            f"{BASE_URL}/api/states",
+            body="{not valid json",
+            content_type="application/json",
+        )
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            with pytest.raises(HomeAssistantError, match="Invalid JSON"):
+                await client.get("/api/states")
 
 
 async def test_post_returns_json() -> None:
@@ -126,7 +151,8 @@ async def test_delete_returns_json() -> None:
 
 async def test_require_session_raises_outside_context() -> None:
     """
-    _require_session raises RuntimeError when called outside an async context manager.
+    _require_session raises RuntimeError when called outside an async context
+    manager.
     """
 
     client = HomeAssistantClient(BASE_URL, TOKEN)
@@ -136,7 +162,8 @@ async def test_require_session_raises_outside_context() -> None:
 
 async def test_base_url_trailing_slash_stripped() -> None:
     """
-    Trailing slash on base_url is stripped so request URLs are not double-slashed.
+    Trailing slash on base_url is stripped so request URLs are not
+    double-slashed.
     """
 
     with aioresponses() as m:
@@ -150,7 +177,8 @@ async def test_base_url_trailing_slash_stripped() -> None:
 
 def _make_ws_mock(receive_side_effect: list[dict]) -> tuple[MagicMock, MagicMock]:
     """
-    Return (session_mock, ws_mock) wired for use with patch("aiohttp.ClientSession").
+    Return (session_mock, ws_mock) wired for use with
+    patch("aiohttp.ClientSession").
 
     Args:
         receive_side_effect: Ordered list of dicts returned by receive_json.
@@ -255,7 +283,8 @@ async def test_ws_command_error_result_raises() -> None:
 
 async def test_ws_command_unexpected_first_message_raises() -> None:
     """
-    ws_command raises HomeAssistantError if the first WS message is not auth_required.
+    ws_command raises HomeAssistantError if the first WS message is not
+    auth_required.
     """
 
     session, _ = _make_ws_mock(
@@ -285,4 +314,73 @@ async def test_ws_command_uses_wss_for_https() -> None:
         client = HomeAssistantClient("https://ha.local:8123", TOKEN)
         await client.ws_command("lovelace/config")
 
-    session.ws_connect.assert_called_once_with("wss://ha.local:8123/api/websocket")
+    session.ws_connect.assert_called_once_with(
+        "wss://ha.local:8123/api/websocket"
+    )
+
+
+async def test_ws_command_skips_non_result_messages() -> None:
+    """
+    ws_command ignores intermediate frames sharing the same id (e.g. events)
+    and only completes on a type="result" message.
+    """
+
+    session, _ = _make_ws_mock(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+            {"id": 1, "type": "event", "event": {"progress": 0.5}},
+            {"id": 1, "type": "result", "success": True, "result": "done"},
+        ]
+    )
+
+    with patch("aiohttp.ClientSession", return_value=session):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        result = await client.ws_command("lovelace/config")
+
+    assert result == "done"
+
+
+async def test_ws_command_times_out_when_no_result() -> None:
+    """
+    ws_command raises HomeAssistantError mentioning a timeout when HA never
+    sends a matching result frame.
+
+    The mock keeps yielding unrelated frames indefinitely so the timeout is
+    what exits the loop, not an exhausted iterator.
+    """
+
+    handshake: Iterator[dict[str, object]] = iter(
+        [
+            {"type": "auth_required"},
+            {"type": "auth_ok"},
+        ]
+    )
+
+    async def _receive() -> dict[str, object]:
+        # After the two handshake frames, stall indefinitely so asyncio.wait_for
+        # fires before the mock runs out of canned responses.
+        try:
+            return next(handshake)
+        except StopIteration:
+            await asyncio.sleep(10)
+            return {"id": 1, "type": "event"}
+
+    ws = MagicMock()
+    ws.receive_json = AsyncMock(side_effect=_receive)
+    ws.send_json = AsyncMock()
+    ws.__aenter__ = AsyncMock(return_value=ws)
+    ws.__aexit__ = AsyncMock(return_value=None)
+
+    session = MagicMock()
+    session.ws_connect = MagicMock(return_value=ws)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+
+    with (
+        patch("aiohttp.ClientSession", return_value=session),
+        patch("ha_mcp.client._WS_COMMAND_TIMEOUT_SECONDS", 0.05),
+    ):
+        client = HomeAssistantClient(BASE_URL, TOKEN)
+        with pytest.raises(HomeAssistantError, match="timed out"):
+            await client.ws_command("lovelace/config")
