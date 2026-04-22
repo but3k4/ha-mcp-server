@@ -228,29 +228,6 @@ def register(mcp: FastMCP) -> None:
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         return await client.get("/api/config/config_entries/entry")
 
-    @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def reload_integration(ctx: Context, entry_id: str) -> str:
-        """
-        Reload a specific integration config entry without restarting HA.
-
-        Returns an error string if the integration does not support reloading
-        (not all integrations are reloadable). Use list_integrations to obtain
-        the entry_id.
-
-        Args:
-            ctx: MCP request context (injected by FastMCP).
-            entry_id: The config entry ID to reload (from list_integrations).
-
-        Returns:
-            Confirmation message.
-        """
-
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        result = await client.post(
-            f"/api/config/config_entries/entry/{entry_id}/reload"
-        )
-        return str(result)
-
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_system_health(ctx: Context) -> dict[str, Any]:
         """

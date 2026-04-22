@@ -263,26 +263,6 @@ async def test_list_integrations(
     mock_client.get.assert_called_once_with("/api/config/config_entries/entry")
 
 
-async def test_reload_integration(
-    tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
-) -> None:
-    """
-    reload_integration POSTs to the entry reload endpoint and returns the
-    response dict.
-    """
-
-    mock_client.post.return_value = {"require_restart": False}
-    result = await tools["reload_integration"](
-        ctx=mock_ctx,
-        entry_id="entry_id_1"
-        )
-    assert "require_restart" in result
-    mock_client.post.assert_called_once_with(
-        "/api/config/config_entries/entry/entry_id_1/reload"
-    )
-
 
 async def test_get_system_health(
     tools: dict[str, Any],
@@ -503,20 +483,6 @@ async def test_list_integrations_error(
     with pytest.raises(HomeAssistantError, match="api failure"):
         await tools["list_integrations"](ctx=mock_ctx)
 
-
-async def test_reload_integration_error(
-    tools: dict[str, Any],
-    mock_ctx: MagicMock,
-    mock_client: MagicMock
-) -> None:
-    """reload_integration propagates HomeAssistantError on API failure."""
-
-    mock_client.post.side_effect = HomeAssistantError("api failure")
-    with pytest.raises(HomeAssistantError, match="api failure"):
-        await tools["reload_integration"](
-            ctx=mock_ctx,
-            entry_id="entry_id_1"
-        )
 
 
 async def test_get_system_health_error(

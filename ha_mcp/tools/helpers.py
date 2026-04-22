@@ -2,7 +2,7 @@
 MCP tools for Home Assistant input helpers and timers.
 
 Covers the input_boolean, input_number, input_select, input_text,
-input_datetime, input_button, and timer domains.
+input_datetime, and timer domains.
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 _HELPER_DOMAINS = frozenset(
     {
         "input_boolean",
-        "input_button",
         "input_datetime",
         "input_number",
         "input_select",

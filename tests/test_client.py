@@ -195,8 +195,7 @@ def _make_ws_mock(receive_side_effect: list[dict]) -> tuple[MagicMock, MagicMock
 
     session = MagicMock()
     session.ws_connect = MagicMock(return_value=ws)
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
+    session.close = AsyncMock()
 
     return session, ws
 
@@ -213,8 +212,8 @@ async def test_ws_command_returns_result() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        result = await client.ws_command("lovelace/config")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            result = await client.ws_command("lovelace/config")
 
     assert result == {"views": []}
     ws.send_json.assert_any_call({"type": "auth", "access_token": TOKEN})
@@ -233,8 +232,8 @@ async def test_ws_command_with_kwargs() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        await client.ws_command("lovelace/config", url_path="kiosk")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            await client.ws_command("lovelace/config", url_path="kiosk")
 
     ws.send_json.assert_called_with(
         {"id": 1, "type": "lovelace/config", "url_path": "kiosk"}
@@ -252,9 +251,9 @@ async def test_ws_command_auth_failure_raises() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        with pytest.raises(HomeAssistantError, match="authentication failed"):
-            await client.ws_command("lovelace/config")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            with pytest.raises(HomeAssistantError, match="authentication failed"):
+                await client.ws_command("lovelace/config")
 
 
 async def test_ws_command_error_result_raises() -> None:
@@ -276,9 +275,9 @@ async def test_ws_command_error_result_raises() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        with pytest.raises(HomeAssistantError, match="not_found"):
-            await client.ws_command("lovelace/config", url_path="missing")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            with pytest.raises(HomeAssistantError, match="not_found"):
+                await client.ws_command("lovelace/config", url_path="missing")
 
 
 async def test_ws_command_unexpected_first_message_raises() -> None:
@@ -294,9 +293,9 @@ async def test_ws_command_unexpected_first_message_raises() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        with pytest.raises(HomeAssistantError, match="Expected auth_required"):
-            await client.ws_command("lovelace/config")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            with pytest.raises(HomeAssistantError, match="Expected auth_required"):
+                await client.ws_command("lovelace/config")
 
 
 async def test_ws_command_uses_wss_for_https() -> None:
@@ -311,12 +310,10 @@ async def test_ws_command_uses_wss_for_https() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient("https://ha.local:8123", TOKEN)
-        await client.ws_command("lovelace/config")
+        async with HomeAssistantClient("https://ha.local:8123", TOKEN) as client:
+            await client.ws_command("lovelace/config")
 
-    session.ws_connect.assert_called_once_with(
-        "wss://ha.local:8123/api/websocket"
-    )
+    session.ws_connect.assert_called_once_with("wss://ha.local:8123/api/websocket")
 
 
 async def test_ws_command_skips_non_result_messages() -> None:
@@ -335,8 +332,8 @@ async def test_ws_command_skips_non_result_messages() -> None:
     )
 
     with patch("aiohttp.ClientSession", return_value=session):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        result = await client.ws_command("lovelace/config")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            result = await client.ws_command("lovelace/config")
 
     assert result == "done"
 
@@ -374,13 +371,12 @@ async def test_ws_command_times_out_when_no_result() -> None:
 
     session = MagicMock()
     session.ws_connect = MagicMock(return_value=ws)
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
+    session.close = AsyncMock()
 
     with (
         patch("aiohttp.ClientSession", return_value=session),
         patch("ha_mcp.client._WS_COMMAND_TIMEOUT_SECONDS", 0.05),
     ):
-        client = HomeAssistantClient(BASE_URL, TOKEN)
-        with pytest.raises(HomeAssistantError, match="timed out"):
-            await client.ws_command("lovelace/config")
+        async with HomeAssistantClient(BASE_URL, TOKEN) as client:
+            with pytest.raises(HomeAssistantError, match="timed out"):
+                await client.ws_command("lovelace/config")

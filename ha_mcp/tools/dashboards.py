@@ -164,7 +164,6 @@ def register(mcp: FastMCP) -> None:
             Confirmation string with the updated dashboard ID.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         kwargs: dict[str, object] = {}
         if title is not None:
             kwargs["title"] = title
@@ -176,6 +175,10 @@ def register(mcp: FastMCP) -> None:
             kwargs["show_in_sidebar"] = show_in_sidebar
         if require_admin is not None:
             kwargs["require_admin"] = require_admin
+        if not kwargs:
+            raise ValueError("At least one field must be provided to update a dashboard.")
+
+        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
         await client.ws_command(
             "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
         )

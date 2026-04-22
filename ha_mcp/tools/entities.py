@@ -217,7 +217,7 @@ def register(mcp: FastMCP) -> None:
         return results
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_services(ctx: Context) -> dict[str, Any]:
+    async def list_services(ctx: Context) -> list[dict[str, Any]]:
         """
         List all available Home Assistant services grouped by domain.
 
@@ -228,7 +228,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
 
         Returns:
-            Dictionary mapping domain names to their available services and schemas.
+            List of service group objects, each with a domain key and a
+            services dict mapping service names to their parameter schemas.
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client

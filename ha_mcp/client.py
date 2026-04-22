@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 _WEBSOCKET_PATH = "/api/websocket"
 _HTTP_ERROR_THRESHOLD = 400
+_WS_CONNECT_TIMEOUT_SECONDS = 10
 _WS_COMMAND_TIMEOUT_SECONDS = 30
 
 
@@ -91,7 +92,10 @@ class HomeAssistantClient:
             headers={
                 "Authorization": f"Bearer {self._token}",
                 "Content-Type": "application/json",
-            }
+            },
+            timeout=aiohttp.ClientTimeout(
+                connect=_WS_CONNECT_TIMEOUT_SECONDS, total=None
+            ),
         )
 
         return self
@@ -168,12 +172,12 @@ class HomeAssistantClient:
         """
         Send a single command over the HA WebSocket API and return its result.
 
-        Opens a fresh WebSocket connection for each call, completes the HA auth
-        handshake, sends one command message, waits for the matching result
-        message, then closes the connection. Intermediate messages (events,
-        progress updates) sharing the same id are skipped; only the terminal
-        type="result" frame satisfies the wait. A timeout prevents the receive
-        loop from hanging indefinitely if HA never produces a result.
+        Reuses the existing session to open a WebSocket connection, completes
+        the HA auth handshake, sends one command message, waits for the matching
+        result message, then closes the WebSocket. Intermediate messages
+        (events, progress updates) sharing the same id are skipped; only the
+        terminal type="result" frame satisfies the wait. Separate timeouts cover
+        the initial connection and the receive loop.
 
         Args:
             msg_type: HA WebSocket command type, e.g. lovelace/config or
@@ -187,8 +191,9 @@ class HomeAssistantClient:
 
         Raises:
             HomeAssistantError: If authentication is rejected, the command
-                                returns success: false, or no result message
-                                arrives within the timeout window.
+                                returns success: false, the connection cannot
+                                be established within the timeout, or no result
+                                message arrives within the timeout window.
         """
 
         parsed = urlparse(self._base_url)
@@ -199,48 +204,53 @@ class HomeAssistantClient:
             )
         )
 
-        async with aiohttp.ClientSession() as session, session.ws_connect(ws_url) as ws:
-            first = await ws.receive_json()
-            if first.get("type") != "auth_required":
-                raise HomeAssistantError(
-                    f"Expected auth_required, got {first.get('type')!r}"
-                )
+        try:
+            async with self._require_session().ws_connect(ws_url) as ws:
+                first = await ws.receive_json()
+                if first.get("type") != "auth_required":
+                    raise HomeAssistantError(
+                        f"Expected auth_required, got {first.get('type')!r}"
+                    )
 
-            await ws.send_json({"type": "auth", "access_token": self._token})
-            auth_msg = await ws.receive_json()
-            if auth_msg.get("type") != "auth_ok":
-                raise HomeAssistantError(f"WebSocket authentication failed: {auth_msg}")
+                await ws.send_json({"type": "auth", "access_token": self._token})
+                auth_msg = await ws.receive_json()
+                if auth_msg.get("type") != "auth_ok":
+                    raise HomeAssistantError(
+                        f"WebSocket authentication failed: {auth_msg}"
+                    )
 
-            cmd_id = 1
-            await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
+                cmd_id = 1
+                await ws.send_json({"id": cmd_id, "type": msg_type, **kwargs})
 
-            async def _await_result() -> dict[str, Any]:
-                while True:
-                    msg = await ws.receive_json()
-                    if (
-                        msg.get("id") == cmd_id
-                        and msg.get("type") == "result"
-                    ):
-                        return msg
+                async def _await_result() -> dict[str, Any]:
+                    while True:
+                        msg = await ws.receive_json()
+                        if msg.get("id") == cmd_id and msg.get("type") == "result":
+                            return msg
 
-            try:
-                msg = await asyncio.wait_for(
-                    _await_result(), timeout=_WS_COMMAND_TIMEOUT_SECONDS
-                )
-            except TimeoutError as exc:
-                raise HomeAssistantError(
-                    f"WS command {msg_type!r} timed out after "
-                    f"{_WS_COMMAND_TIMEOUT_SECONDS}s"
-                ) from exc
+                try:
+                    msg = await asyncio.wait_for(
+                        _await_result(), timeout=_WS_COMMAND_TIMEOUT_SECONDS
+                    )
+                except TimeoutError as exc:
+                    raise HomeAssistantError(
+                        f"WS command {msg_type!r} timed out after "
+                        f"{_WS_COMMAND_TIMEOUT_SECONDS}s"
+                    ) from exc
 
-            if not msg.get("success"):
-                error = msg.get("error", {})
-                raise HomeAssistantError(
-                    f"WS command {msg_type!r} failed: "
-                    f"{error.get('code')} — {error.get('message')}"
-                )
+                if not msg.get("success"):
+                    error = msg.get("error", {})
+                    raise HomeAssistantError(
+                        f"WS command {msg_type!r} failed: "
+                        f"{error.get('code')} — {error.get('message')}"
+                    )
 
-            return msg.get("result")
+                return msg.get("result")
+
+        except TimeoutError as exc:
+            raise HomeAssistantError(
+                f"WS connection timed out after {_WS_CONNECT_TIMEOUT_SECONDS}s"
+            ) from exc
 
     async def delete(self, path: str) -> Any:
         """

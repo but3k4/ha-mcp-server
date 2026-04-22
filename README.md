@@ -47,7 +47,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 | Input Helpers & Timers | Set input_boolean, input_number, input_select, input_text, input_datetime, and timer entities |
 | Device & Integration Registry | Browse device hardware info, list config entries, reload integrations |
 
-**78 tools** in total.
+**77 tools** in total.
 
 ---
 
@@ -415,7 +415,6 @@ After editing the config, restart Claude Code or run `/mcp` to reload servers.
 | `update_supervisor` | Update the Supervisor |
 | `update_os` | Update the HA OS |
 | `list_integrations` | List all installed integration config entries |
-| `reload_integration` | Reload a specific integration without restarting |
 | `get_system_health` | Get health status for all components |
 | `list_users` | List all HA user accounts |
 | `create_backup` | Trigger a full system backup |

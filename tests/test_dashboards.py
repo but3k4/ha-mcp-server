@@ -299,6 +299,18 @@ async def test_update_dashboard_config_error(
         await tools["update_dashboard_config"](ctx=mock_ctx, config=_CONFIG)
 
 
+async def test_update_dashboard_no_fields(
+    tools: dict[str, Any],
+    mock_ctx: MagicMock,
+    mock_client: MagicMock,
+) -> None:
+    """update_dashboard raises ValueError when no optional fields are given."""
+
+    with pytest.raises(ValueError, match="At least one field"):
+        await tools["update_dashboard"](ctx=mock_ctx, dashboard_id="dashboard_ios")
+    mock_client.ws_command.assert_not_called()
+
+
 async def test_update_dashboard_error(
     tools: dict[str, Any],
     mock_ctx: MagicMock, mock_client: MagicMock

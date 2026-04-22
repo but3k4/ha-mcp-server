@@ -105,6 +105,8 @@ def test_create_server_returns_fastmcp(
     with patch("ha_mcp.server.load_dotenv"):
         server = create_server()
     assert isinstance(server, FastMCP)
+    tool_names = {t.name for t in server._tool_manager.list_tools()}
+    assert len(tool_names) == 77
 
 
 def test_main_calls_run_stdio(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,8 +1,8 @@
 __pycache__/
 .claude
 .coverage
+.DS_Store
 .env
-.mcp.json
 .mypy_cache/
 .ruff_cache/
 .venv/

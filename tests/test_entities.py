@@ -357,9 +357,13 @@ async def test_list_services(
     mock_ctx: MagicMock,
     mock_client: MagicMock
 ) -> None:
-    """list_services returns the raw services dict from /api/services."""
+    """list_services returns the raw services list from /api/services."""
 
-    services: dict[str, Any] = {"light": {"turn_on": {}, "turn_off": {}}}
+    services: list[dict[str, Any]] = [
+        {
+            "domain": "light", "services": {"turn_on": {}, "turn_off": {}}
+        }
+    ]
     mock_client.get.return_value = services
     result = await tools["list_services"](ctx=mock_ctx)
     assert result == services

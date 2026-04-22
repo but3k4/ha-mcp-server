@@ -39,7 +39,7 @@ def register(mcp: FastMCP) -> None:
         """
 
         client: HomeAssistantClient = ctx.request_context.lifespan_context.client
-        response: dict[str, Any] = await client.get(
+        response: list[dict[str, Any]] | dict[str, Any] = await client.get(
             "/api/config/device_registry/list"
         )
         return (
