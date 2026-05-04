@@ -1,29 +1,39 @@
 """
 Home Assistant MCP server entry point.
 
-Loads configuration from environment variables and registers all tool modules.
+Loads configuration from a YAML file or environment variables and registers
+all tool modules.
 
 Usage:
     uv run ha-mcp
 
-Environment Variables:
-    HA_URL:   Base URL of the Home Assistant instance, e.g.
-              http://homeassistant.local:8123.
-    HA_TOKEN: Long-lived access token from your HA profile.
+Configuration (in order of precedence):
+    HA_CONFIG: Path to a YAML or JSON config file with multiple instances.
+    ha-mcp.yaml: Config file in the current directory (auto-discovered).
+    HA_URL + HA_TOKEN: Single-instance fallback via environment variables.
+
+Config file format (ha-mcp.yaml):
+    instances:
+      - name: home
+        url: http://homeassistant.local:8123
+        token: <long-lived access token>
+      - name: office
+        url: http://office-ha.local:8123
+        token: <long-lived access token>
+    default: home  # optional; defaults to the first instance
 """
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from ha_mcp.client import HomeAssistantClient
+from ha_mcp.config import load_config
 from ha_mcp.tools import (
     addons,
     automations,
@@ -50,53 +60,29 @@ _VALID_TRANSPORTS: tuple[Literal["stdio", "sse", "streamable-http"], ...] = (
 class AppState:
     """Lifespan state shared across all tool calls."""
 
-    client: HomeAssistantClient
-
-
-def _load_client() -> HomeAssistantClient:
-    """
-    Load HA connection settings from the environment and return a configured client.
-
-    Environment variables take precedence. A .env file at the project root is
-    loaded as a fallback only when HA_URL or HA_TOKEN is not already set in
-    the process environment.
-
-    Returns:
-        A HomeAssistantClient ready for use. Call it as a context manager to
-        open the connection.
-
-    Raises:
-        ValueError: If HA_URL or HA_TOKEN are not set in the environment.
-    """
-
-    ha_url = os.getenv("HA_URL")
-    ha_token = os.getenv("HA_TOKEN")
-
-    if not (ha_url and ha_token):
-        load_dotenv(Path(__file__).parent.parent / ".env")
-        ha_url = os.getenv("HA_URL")
-        ha_token = os.getenv("HA_TOKEN")
-
-    if not ha_url:
-        raise ValueError("HA_URL environment variable is required.")
-    if not ha_token:
-        raise ValueError("HA_TOKEN environment variable is required.")
-
-    return HomeAssistantClient(base_url=ha_url, token=ha_token)
+    clients: dict[str, HomeAssistantClient]
+    default_instance: str
 
 
 @asynccontextmanager
 async def app_lifespan(app: FastMCP) -> AsyncIterator[AppState]:
     """
-    Open a single persistent HTTP session for the server's lifetime.
+    Open one persistent HTTP session per configured HA instance.
 
-    Yields an :class: AppState whose client is already entered (session open).
-    Tools access it via ctx.request_context.lifespan_context.client.
+    Yields an AppState whose clients dict maps instance names to open
+    HomeAssistantClient sessions. Tools resolve the target client by
+    looking up the instance name passed by the caller.
     """
 
-    client = _load_client()
-    async with client as c:
-        yield AppState(client=c)
+    config = load_config()
+    async with AsyncExitStack() as stack:
+        clients: dict[str, HomeAssistantClient] = {}
+        for inst in config.instances:
+            client = await stack.enter_async_context(
+                HomeAssistantClient(base_url=inst.url, token=inst.token)
+            )
+            clients[inst.name] = client
+        yield AppState(clients=clients, default_instance=config.default)
 
 
 def create_server(port: int = 8000) -> FastMCP:

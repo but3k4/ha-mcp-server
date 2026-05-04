@@ -36,7 +36,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_input_helpers(
         ctx: Context,
-        domain: str | None = None
+        domain: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         List Home Assistant input helper and timer entities.
@@ -49,12 +50,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             domain: Optional domain filter, e.g. input_boolean or timer.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of entity state objects for the matching helper domains.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
 
         if domain is not None:
@@ -66,7 +70,8 @@ def register(mcp: FastMCP) -> None:
     async def set_input_boolean(
         ctx: Context,
         entity_id: str,
-        state: str
+        state: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Turn an input_boolean helper on or off.
@@ -76,6 +81,8 @@ def register(mcp: FastMCP) -> None:
             entity_id: Input boolean entity ID, e.g.
                        input_boolean.vacation_mode.
             state: Target state. Must be "on" or "off".
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
@@ -88,7 +95,8 @@ def register(mcp: FastMCP) -> None:
             raise ValueError(f"state must be 'on' or 'off', got {state!r}")
 
         service = "turn_on" if state == "on" else "turn_off"
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             f"/api/services/input_boolean/{service}",
             {"entity_id": entity_id},
@@ -98,7 +106,8 @@ def register(mcp: FastMCP) -> None:
     async def set_input_number(
         ctx: Context,
         entity_id: str,
-        value: float
+        value: float,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Set the numeric value of an input_number helper.
@@ -112,6 +121,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Input number entity ID, e.g. input_number.target_temp.
             value: New numeric value. Must be finite (not NaN or infinity).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
@@ -123,7 +134,8 @@ def register(mcp: FastMCP) -> None:
         if not math.isfinite(value):
             raise ValueError(f"value must be a finite number, got {value!r}")
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/input_number/set_value",
             {"entity_id": entity_id, "value": value},
@@ -133,7 +145,8 @@ def register(mcp: FastMCP) -> None:
     async def set_input_select(
         ctx: Context,
         entity_id: str,
-        option: str
+        option: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Select an option on an input_select helper.
@@ -147,6 +160,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Input select entity ID, e.g. input_select.preset_mode.
             option: Option string to select, e.g. "Away".
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
@@ -158,7 +173,8 @@ def register(mcp: FastMCP) -> None:
         if not option:
             raise ValueError("option must not be empty")
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/input_select/select_option",
             {"entity_id": entity_id, "option": option},
@@ -168,7 +184,8 @@ def register(mcp: FastMCP) -> None:
     async def set_input_text(
         ctx: Context,
         entity_id: str,
-        value: str
+        value: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Set the text value of an input_text helper.
@@ -181,12 +198,15 @@ def register(mcp: FastMCP) -> None:
             entity_id: Input text entity ID,
                        e.g. input_text.welcome_message.
             value: New text value.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/input_text/set_value",
             {"entity_id": entity_id, "value": value},
@@ -199,6 +219,7 @@ def register(mcp: FastMCP) -> None:
         date: str | None = None,
         time: str | None = None,
         datetime_str: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Set the value of an input_datetime helper.
@@ -215,6 +236,8 @@ def register(mcp: FastMCP) -> None:
             date: Date string in YYYY-MM-DD format.
             time: Time string in HH:MM:SS format.
             datetime_str: Combined datetime in YYYY-MM-DD HH:MM:SS format.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
@@ -236,7 +259,8 @@ def register(mcp: FastMCP) -> None:
         if datetime_str is not None:
             payload["datetime"] = datetime_str
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/input_datetime/set_datetime", payload
         )
@@ -246,6 +270,7 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         entity_id: str,
         duration: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Start or restart a timer entity.
@@ -258,6 +283,8 @@ def register(mcp: FastMCP) -> None:
             entity_id: Timer entity ID, e.g. timer.cooking.
             duration: Optional override duration in HH:MM:SS or SS format, e.g.
                       "00:05:00" for five minutes.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
@@ -267,11 +294,16 @@ def register(mcp: FastMCP) -> None:
         if duration is not None:
             payload["duration"] = duration
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post("/api/services/timer/start", payload)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def pause_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]]:
+    async def pause_timer(
+        ctx: Context,
+        entity_id: str,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         Pause a running timer entity.
 
@@ -280,18 +312,25 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Timer entity ID, e.g. timer.cooking.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/timer/pause", {"entity_id": entity_id}
         )
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def cancel_timer(ctx: Context, entity_id: str) -> list[dict[str, Any]]:
+    async def cancel_timer(
+        ctx: Context,
+        entity_id: str,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         Cancel a running or paused timer entity.
 
@@ -301,12 +340,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Timer entity ID, e.g. timer.cooking.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/timer/cancel", {"entity_id": entity_id}
         )

@@ -11,6 +11,8 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for Hom
 - [Installation](#installation)
 - [Generating a Long-Lived Access Token](#generating-a-long-lived-access-token)
 - [Configuration](#configuration)
+  - [Single instance](#single-instance)
+  - [Multiple instances](#multiple-instances)
 - [Running the Server](#running-the-server)
   - [Directly with uv](#directly-with-uv)
   - [With Docker](#with-docker)
@@ -90,6 +92,8 @@ uv sync
 
 ## Configuration
 
+### Single instance
+
 Copy the example environment file and fill in your values:
 
 ```bash
@@ -115,16 +119,42 @@ Common `HA_URL` formats:
 | Nabu Casa / Remote UI | `https://abc123.ui.nabu.casa` |
 | Custom domain with SSL | `https://ha.yourdomain.com` |
 
+### Multiple instances
+
+Create a `ha-mcp.yaml` file in the project root (or anywhere and point `HA_CONFIG` at it):
+
+```yaml
+instances:
+  - name: home
+    url: http://homeassistant.local:8123
+    token: your_long_lived_token_here
+  - name: office
+    url: http://office-ha.local:8123
+    token: another_token_here
+
+default: home   # optional. Defaults to the first entry
+```
+
+The server resolves configuration in this order:
+
+1. File at the path given by `HA_CONFIG`
+2. `ha-mcp.yaml`, `ha-mcp.yml`, or `ha-mcp.json` auto-discovered in the working directory
+3. `HA_URL` + `HA_TOKEN` environment variables (single instance, backward-compatible)
+
 ---
 
 ## Environment Variables
 
-| Variable    | Required | Default  | Description                               |
-|-------------|----------|----------|-------------------------------------------|
-| `HA_URL`    | yes      | —        | Base URL of your Home Assistant instance  |
-| `HA_TOKEN`  | yes      | —        | Long-lived access token                   |
-| `TRANSPORT` | no       | `stdio`  | Transport mode: `stdio`, `sse`, or `streamable-http` |
-| `PORT`      | no       | `8765`   | HTTP port when `TRANSPORT=sse`            |
+| Variable    | Required | Default   | Description                               |
+|-------------|----------|-----------|-------------------------------------------|
+| `HA_URL`    | yes*     | —         | Base URL of your Home Assistant instance  |
+| `HA_TOKEN`  | yes*     | —         | Long-lived access token                   |
+| `HA_CONFIG` | no       | —         | Path to a YAML or JSON multi-instance config file. When set, `HA_URL` and `HA_TOKEN` are ignored |
+| `TRANSPORT` | no       | `stdio`   | Transport mode: `stdio`, `sse`, or `streamable-http` |
+| `PORT`      | no       | `8765`    | HTTP port when `TRANSPORT` is not `stdio` |
+| `LOG_LEVEL` | no       | `WARNING` | Python logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+
+\* Not required when `HA_CONFIG` is set or when a `ha-mcp.yaml` file is present in the working directory.
 
 ---
 
@@ -133,7 +163,7 @@ Common `HA_URL` formats:
 ### Directly with uv
 
 ```bash
-uv run ha-mcp
+uv run ha
 ```
 
 The server communicates over **stdio** by default and is meant to be launched by an MCP client (like Claude Code), not run manually in a terminal for day-to-day use.
@@ -220,7 +250,7 @@ podman run -d --name ha-mcp \
       "args": [
         "run",
         "--project", "/absolute/path/to/ha-mcp-server",
-        "ha-mcp"
+        "ha"
       ]
     }
   }
@@ -253,7 +283,7 @@ Add the server to your Claude Code MCP configuration. The config file location d
       "args": [
         "run",
         "--project", "/absolute/path/to/ha-mcp-server",
-        "ha-mcp"
+        "ha"
       ],
       "env": {
         "HA_URL": "http://homeassistant.local:8123",

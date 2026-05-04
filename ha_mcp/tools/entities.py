@@ -67,7 +67,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_entities(
         ctx: Context,
-        domain: str | None = None
+        domain: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         List all Home Assistant entities, optionally filtered by domain.
@@ -81,12 +82,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             domain: Optional domain filter, e.g. light, switch, sensor.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             A list of entity state objects with entity_id, state, and attributes.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
 
         if domain is None:
@@ -95,7 +99,11 @@ def register(mcp: FastMCP) -> None:
         return [s for s in states if s["entity_id"].startswith(f"{domain}.")]
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_entity(ctx: Context, entity_id: str) -> dict[str, Any]:
+    async def get_entity(
+        ctx: Context,
+        entity_id: str,
+        instance: str = "",
+    ) -> dict[str, Any]:
         """
         Get the current state and attributes of a single entity.
 
@@ -104,13 +112,16 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Full entity ID, e.g. light.living_room.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Entity state object with entity_id, state,
             attributes, and timestamps.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"/api/states/{entity_id}")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -119,6 +130,7 @@ def register(mcp: FastMCP) -> None:
         entity_id: str,
         state: str,
         attributes: dict[str, Any] | None = None,
+        instance: str = "",
     ) -> dict[str, Any]:
         """
         Directly set the state and attributes of an entity in the HA state machine.
@@ -136,12 +148,15 @@ def register(mcp: FastMCP) -> None:
             state: New state string, e.g. on, off, home.
             attributes: Optional dictionary of attributes to set alongside the
                         state.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             The updated entity state object.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             f"/api/states/{entity_id}",
             {"state": state, "attributes": attributes or {}},
@@ -153,6 +168,7 @@ def register(mcp: FastMCP) -> None:
         domain: str,
         service: str,
         service_data: dict[str, Any] | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Call a Home Assistant service.
@@ -169,19 +185,26 @@ def register(mcp: FastMCP) -> None:
             service: Service name, e.g. turn_on, turn_off, toggle.
             service_data: Optional data payload, e.g.
                           {"entity_id": "light.kitchen", "brightness": 200}.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of entity states affected by the service call.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             f"/api/services/{domain}/{service}",
             service_data or {},
         )
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def search_entities(ctx: Context, query: str) -> list[dict[str, Any]]:
+    async def search_entities(
+        ctx: Context,
+        query: str,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         Search for entities by ID, friendly name, or state.
 
@@ -193,12 +216,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             query: Case-insensitive search string.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Matching entity state objects.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
 
         query_lower = query.lower()
@@ -206,18 +232,21 @@ def register(mcp: FastMCP) -> None:
         for entity in states:
             entity_id: str = entity.get("entity_id", "")
             friendly_name: str = entity.get("attributes", {}).get("friendly_name", "")
-            state: str = entity.get("state", "")
+            entity_state: str = entity.get("state", "")
 
             if any(
                 query_lower in field.lower()
-                for field in [entity_id, friendly_name, state]
+                for field in [entity_id, friendly_name, entity_state]
             ):
                 results.append(entity)
 
         return results
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_services(ctx: Context) -> list[dict[str, Any]]:
+    async def list_services(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all available Home Assistant services grouped by domain.
 
@@ -226,17 +255,23 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of service group objects, each with a domain key and a
             services dict mapping service names to their parameter schemas.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.get("/api/services")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_areas(ctx: Context) -> list[dict[str, Any]]:
+    async def list_areas(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all configured areas in Home Assistant.
 
@@ -246,6 +281,8 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of area objects with area_id and name.
@@ -260,12 +297,16 @@ def register(mcp: FastMCP) -> None:
             "{{ ns.areas | tojson }}"
         )
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         result = await client.post("/api/template", {"template": template})
         return _parse_template_json(result)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_devices(ctx: Context) -> list[dict[str, Any]]:
+    async def list_devices(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all entities with their friendly names and area assignments.
 
@@ -278,13 +319,16 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of objects with entity_id, friendly_name, state, area_id, and
             area_name.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         area_result = await client.post(
             "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
         )
@@ -307,7 +351,10 @@ def register(mcp: FastMCP) -> None:
         ]
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_entity_registry(ctx: Context) -> list[dict[str, Any]]:
+    async def list_entity_registry(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List area-assigned entities with friendly names and current state.
 
@@ -318,13 +365,16 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of objects with entity_id, friendly_name, state, area_id, and
             area_name.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         area_result = await client.post(
             "/api/template", {"template": _AREA_ENTITIES_TEMPLATE}
         )
@@ -352,6 +402,7 @@ def register(mcp: FastMCP) -> None:
         entity_id: str,
         start_time: str | None = None,
         end_time: str | None = None,
+        instance: str = "",
     ) -> list[list[dict[str, Any]]]:
         """
         Retrieve the historical state changes for an entity.
@@ -367,6 +418,8 @@ def register(mcp: FastMCP) -> None:
             start_time: ISO 8601 timestamp for the start of the range, e.g.
                         2024-01-01T00:00:00.
             end_time: ISO 8601 timestamp for the end of the range.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of lists of historical state objects, one inner list per
@@ -381,7 +434,8 @@ def register(mcp: FastMCP) -> None:
         if end_time:
             params["end_time"] = end_time
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.get(path, params=params)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
@@ -390,6 +444,7 @@ def register(mcp: FastMCP) -> None:
         entity_id: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Fetch logbook entries, optionally filtered by entity and time range.
@@ -404,6 +459,8 @@ def register(mcp: FastMCP) -> None:
             entity_id: Optional entity ID to filter entries.
             start_time: ISO 8601 start timestamp.
             end_time: ISO 8601 end timestamp.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of logbook entry objects.
@@ -419,11 +476,16 @@ def register(mcp: FastMCP) -> None:
         if end_time:
             params["end_time"] = end_time
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.get(path, params=params or None)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def render_template(ctx: Context, template: str) -> str:
+    async def render_template(
+        ctx: Context,
+        template: str,
+        instance: str = "",
+    ) -> str:
         """
         Render a Jinja2 template string using Home Assistant's template engine.
 
@@ -436,12 +498,15 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             template: A Jinja2 template string,
                       e.g. {{ states('sensor.temperature') }}.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             The rendered string result.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post("/api/template", {"template": template})
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
@@ -449,6 +514,7 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         event_type: str,
         event_data: dict[str, Any] | None = None,
+        instance: str = "",
     ) -> dict[str, Any]:
         """
         Fire a custom event on the Home Assistant event bus.
@@ -462,10 +528,13 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             event_type: Name of the event to fire, e.g. my_custom_event.
             event_data: Optional dictionary of data to include with the event.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message from HA.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(f"/api/events/{event_type}", event_data or {})

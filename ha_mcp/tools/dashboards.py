@@ -22,7 +22,10 @@ def register(mcp: FastMCP) -> None:
     """Register all Lovelace dashboard tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_dashboards(ctx: Context) -> list[dict[str, Any]]:
+    async def list_dashboards(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all Lovelace dashboards configured in Home Assistant.
 
@@ -30,19 +33,23 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of dashboard objects, each containing url_path,
             title, mode, and sidebar visibility flags.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.ws_command("lovelace/dashboards/list")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def get_dashboard_config(
         ctx: Context,
-        url_path: str | None = None
+        url_path: str | None = None,
+        instance: str = "",
     ) -> dict[str, Any]:
         """
         Get the full Lovelace configuration for a dashboard.
@@ -54,13 +61,16 @@ def register(mcp: FastMCP) -> None:
             url_path: Dashboard URL path, e.g. kiosk for a dashboard accessible
                       at /dashboard-kiosk/. Leave None or pass "lovelace" to
                       target the default dashboard.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Full dashboard config dict containing views and optional title and
             background fields.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         kwargs: dict[str, Any] = {}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
@@ -74,6 +84,7 @@ def register(mcp: FastMCP) -> None:
         icon: str | None = None,
         show_in_sidebar: bool = True,
         require_admin: bool = False,
+        instance: str = "",
     ) -> dict[str, Any]:
         """
         Create a new Lovelace dashboard.
@@ -91,12 +102,15 @@ def register(mcp: FastMCP) -> None:
                              sidebar. Defaults to True.
             require_admin: Restrict access to administrator accounts only.
                            Defaults to False.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             The created dashboard object returned by HA.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         kwargs: dict[str, Any] = {
             "url_path": url_path,
             "title": title,
@@ -112,6 +126,7 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         config: dict[str, Any],
         url_path: str | None = None,
+        instance: str = "",
     ) -> str:
         """
         Replace the full configuration of a Lovelace dashboard.
@@ -123,12 +138,15 @@ def register(mcp: FastMCP) -> None:
             config: Complete dashboard config dict, must include views.
             url_path: Dashboard URL path to update. None or "lovelace" targets
                       the default dashboard.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation string.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         kwargs: dict[str, Any] = {"config": config}
         if url_path and url_path != "lovelace":
             kwargs["url_path"] = url_path
@@ -144,6 +162,7 @@ def register(mcp: FastMCP) -> None:
         icon: str | None = None,
         show_in_sidebar: bool | None = None,
         require_admin: bool | None = None,
+        instance: str = "",
     ) -> str:
         """
         Update metadata for an existing Lovelace dashboard.
@@ -159,6 +178,8 @@ def register(mcp: FastMCP) -> None:
             icon: MDI icon string, e.g. mdi:tablet.
             show_in_sidebar: Whether the dashboard appears in the sidebar.
             require_admin: Whether the dashboard requires admin access.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation string with the updated dashboard ID.
@@ -178,14 +199,19 @@ def register(mcp: FastMCP) -> None:
         if not kwargs:
             raise ValueError("At least one field must be provided to update a dashboard.")
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         await client.ws_command(
             "lovelace/dashboards/update", dashboard_id=dashboard_id, **kwargs
         )
         return f"Dashboard {dashboard_id!r} updated."
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
-    async def delete_dashboard(ctx: Context, dashboard_id: str) -> str:
+    async def delete_dashboard(
+        ctx: Context,
+        dashboard_id: str,
+        instance: str = "",
+    ) -> str:
         """
         Delete a Lovelace dashboard by its ID. This action is irreversible.
 
@@ -196,12 +222,15 @@ def register(mcp: FastMCP) -> None:
             dashboard_id: The internal dashboard ID as returned by
                           list_dashboards, e.g. dashboard_tablet. Note that
                           this is the id field, not the url_path.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation string.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         await client.ws_command(
             "lovelace/dashboards/delete", dashboard_id=dashboard_id
         )

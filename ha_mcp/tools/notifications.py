@@ -17,7 +17,10 @@ def register(mcp: FastMCP) -> None:
     """Register all notification tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_notification_services(ctx: Context) -> list[str]:
+    async def list_notification_services(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[str]:
         """
         List all available notification service names in Home Assistant.
 
@@ -29,12 +32,15 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of notify service name strings.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         services: list[dict[str, Any]] = await client.get("/api/services")
 
         for domain_info in services:
@@ -52,6 +58,7 @@ def register(mcp: FastMCP) -> None:
         service: str = "notify",
         target: list[str] | None = None,
         data: dict[str, Any] | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Send a notification via a Home Assistant notify service.
@@ -73,6 +80,8 @@ def register(mcp: FastMCP) -> None:
                   iOS/Android mobile push use {"push": {"sound": "default"}}.
                   For other services consult the integration docs for supported
                   keys.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of entity states affected by the service call.
@@ -86,12 +95,14 @@ def register(mcp: FastMCP) -> None:
         if data is not None:
             payload["data"] = data
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(f"/api/services/notify/{service}", payload)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_persistent_notifications(
         ctx: Context,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         List all active persistent notifications shown in the HA UI bell menu.
@@ -103,12 +114,15 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of persistent notification state objects.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
         return [
             s for s in states if s["entity_id"].startswith("persistent_notification.")
@@ -120,6 +134,7 @@ def register(mcp: FastMCP) -> None:
         message: str,
         title: str | None = None,
         notification_id: str | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Create a persistent notification in the Home Assistant UI.
@@ -134,6 +149,8 @@ def register(mcp: FastMCP) -> None:
             title: Optional notification title.
             notification_id: Optional stable ID for upsert behaviour. If
                              omitted HA generates a random one.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of entity states affected by the service call.
@@ -145,7 +162,8 @@ def register(mcp: FastMCP) -> None:
         if notification_id is not None:
             payload["notification_id"] = notification_id
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/persistent_notification/create", payload
         )
@@ -154,6 +172,7 @@ def register(mcp: FastMCP) -> None:
     async def dismiss_persistent_notification(
         ctx: Context,
         notification_id: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Dismiss a persistent notification from the Home Assistant UI.
@@ -162,12 +181,15 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             notification_id: The notification ID (the part after
                              persistent_notification. in the entity ID).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of entity states affected by the service call.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        lifespan = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = lifespan.clients[instance or lifespan.default_instance]
         return await client.post(
             "/api/services/persistent_notification/dismiss",
             {"notification_id": notification_id},

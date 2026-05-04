@@ -24,7 +24,10 @@ def register(mcp: FastMCP) -> None:
     """Register all add-on management tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_addons(ctx: Context) -> list[dict[str, Any]]:
+    async def list_addons(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all available and installed Home Assistant add-ons.
 
@@ -34,18 +37,25 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of add-on summary objects with slug, name, state, version,
             version_latest, and update_available.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.get(f"{_SUPERVISOR_PREFIX}/addons")
         return response.get("data", {}).get("addons", [])
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_addon_info(ctx: Context, addon_slug: str) -> dict[str, Any]:
+    async def get_addon_info(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> dict[str, Any]:
         """
         Get detailed information about a specific add-on.
 
@@ -57,20 +67,27 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug identifier, e.g. core_mosquitto or
                         a0d7b954_vscode.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Detailed add-on info including version, state, options, ports, and
             ingress config.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.get(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/info"
         )
         return response.get("data", response)
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def install_addon(ctx: Context, addon_slug: str) -> str:
+    async def install_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Install a Home Assistant add-on from the store.
 
@@ -79,19 +96,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to install, e.g. core_ssh.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/install"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(destructiveHint=True, openWorldHint=True))
-    async def uninstall_addon(ctx: Context, addon_slug: str) -> str:
+    async def uninstall_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Uninstall a Home Assistant add-on. This action is irreversible.
 
@@ -100,19 +124,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to remove.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/uninstall"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def update_addon(ctx: Context, addon_slug: str) -> str:
+    async def update_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Update a Home Assistant add-on to the latest available version.
 
@@ -121,19 +152,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to update.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/update"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def start_addon(ctx: Context, addon_slug: str) -> str:
+    async def start_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Start a stopped Home Assistant add-on.
 
@@ -142,19 +180,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to start.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/start"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def stop_addon(ctx: Context, addon_slug: str) -> str:
+    async def stop_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Stop a running Home Assistant add-on.
 
@@ -163,19 +208,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to stop.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/stop"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def restart_addon(ctx: Context, addon_slug: str) -> str:
+    async def restart_addon(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Restart a Home Assistant add-on.
 
@@ -184,19 +236,26 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug to restart.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/restart"
         )
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_addon_logs(ctx: Context, addon_slug: str) -> str:
+    async def get_addon_logs(
+        ctx: Context,
+        addon_slug: str,
+        instance: str = "",
+    ) -> str:
         """
         Fetch the stdout/stderr logs for a specific add-on.
 
@@ -207,19 +266,23 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             addon_slug: Add-on slug whose logs to retrieve.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw log output as a string.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/logs")
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def set_addon_options(
         ctx: Context,
         addon_slug: str,
-        options: dict[str, Any]
+        options: dict[str, Any],
+        instance: str = "",
     ) -> str:
         """
         Update configuration options for a Home Assistant add-on.
@@ -233,12 +296,15 @@ def register(mcp: FastMCP) -> None:
             addon_slug: Add-on slug to configure.
             options: Dictionary of option keys and values specific to the
                      add-on.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/addons/{addon_slug}/options",
             {"options": options},
@@ -246,7 +312,10 @@ def register(mcp: FastMCP) -> None:
         return response.get("result", str(response))
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_addon_repositories(ctx: Context) -> list[dict[str, Any]]:
+    async def list_addon_repositories(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all configured add-on repositories (stores).
 
@@ -254,19 +323,26 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of repository objects with slug, name, source, and maintainer.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.get(
             f"{_SUPERVISOR_PREFIX}/store/repositories"
         )
         return response.get("data", {}).get("repositories", [])
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def add_addon_repository(ctx: Context, repository_url: str) -> str:
+    async def add_addon_repository(
+        ctx: Context,
+        repository_url: str,
+        instance: str = "",
+    ) -> str:
         """
         Add a third-party add-on repository to Home Assistant.
 
@@ -278,6 +354,8 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             repository_url: HTTPS Git URL of the repository,
                             e.g. https://github.com/owner/repo.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
@@ -292,7 +370,8 @@ def register(mcp: FastMCP) -> None:
                 f"got {repository_url!r}"
             )
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         response: dict[str, Any] = await client.post(
             f"{_SUPERVISOR_PREFIX}/store/repositories",
             {"repository": repository_url},

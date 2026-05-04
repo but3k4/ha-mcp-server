@@ -17,26 +17,33 @@ def register(mcp: FastMCP) -> None:
     """Register all automation and script tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_automations(ctx: Context) -> list[dict[str, Any]]:
+    async def list_automations(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all automations defined in Home Assistant.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of automation state objects. Each has entity_id, state
             (on/off), and attributes with friendly_name and last_triggered.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("automation.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def trigger_automation(
         ctx: Context,
-        entity_id: str
+        entity_id: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Manually trigger an automation regardless of its conditions.
@@ -44,12 +51,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Automation entity ID, e.g. automation.morning_lights.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.post(
             "/api/services/automation/trigger",
             {"entity_id": entity_id},
@@ -58,7 +68,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def enable_automation(
         ctx: Context,
-        entity_id: str
+        entity_id: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Enable a previously disabled automation.
@@ -66,12 +77,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Automation entity ID, e.g. automation.morning_lights.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.post(
             "/api/services/automation/turn_on",
             {"entity_id": entity_id},
@@ -80,7 +94,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def disable_automation(
         ctx: Context,
-        entity_id: str
+        entity_id: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Disable an automation so it will not fire automatically.
@@ -88,46 +103,61 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Automation entity ID.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.post(
             "/api/services/automation/turn_off",
             {"entity_id": entity_id},
         )
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
-    async def reload_automations(ctx: Context) -> str:
+    async def reload_automations(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Reload all automations from the YAML configuration without restarting HA.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Confirmation message.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         result = await client.post("/api/services/automation/reload")
         return f"Automations reloaded. Affected states: {len(result)}"
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_scripts(ctx: Context) -> list[dict[str, Any]]:
+    async def list_scripts(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all scripts defined in Home Assistant.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of script state objects with entity_id, state, and attributes.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("script.")]
 
@@ -136,6 +166,7 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         entity_id: str,
         variables: dict[str, Any] | None = None,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Execute a HA script entity.
@@ -144,12 +175,15 @@ def register(mcp: FastMCP) -> None:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Script entity ID, e.g. script.goodnight.
             variables: Optional variables to pass into the script.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         payload: dict[str, Any] = {"entity_id": entity_id}
         if variables:
             payload["variables"] = variables
@@ -157,25 +191,32 @@ def register(mcp: FastMCP) -> None:
         return await client.post("/api/services/script/turn_on", payload)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_scenes(ctx: Context) -> list[dict[str, Any]]:
+    async def list_scenes(
+        ctx: Context,
+        instance: str = "",
+    ) -> list[dict[str, Any]]:
         """
         List all scenes defined in Home Assistant.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of scene state objects.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         states: list[dict[str, Any]] = await client.get("/api/states")
         return [s for s in states if s["entity_id"].startswith("scene.")]
 
     @mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
     async def activate_scene(
         ctx: Context,
-        entity_id: str
+        entity_id: str,
+        instance: str = "",
     ) -> list[dict[str, Any]]:
         """
         Activate a Home Assistant scene.
@@ -183,12 +224,15 @@ def register(mcp: FastMCP) -> None:
         Args:
             ctx: MCP request context (injected by FastMCP).
             entity_id: Scene entity ID, e.g. scene.movie_time.
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             List of affected entity states.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.post(
             "/api/services/scene/turn_on",
             {"entity_id": entity_id},

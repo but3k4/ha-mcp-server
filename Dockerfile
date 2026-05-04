@@ -12,4 +12,4 @@ ENV TRANSPORT=sse \
     PORT=8765 \
     LOG_LEVEL=WARNING
 
-CMD ["/app/.venv/bin/ha-mcp"]
+CMD ["/app/.venv/bin/ha"]

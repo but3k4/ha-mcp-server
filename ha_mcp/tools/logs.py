@@ -19,22 +19,31 @@ def register(mcp: FastMCP) -> None:
     """Register all log-access tools on the MCP server."""
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_error_log(ctx: Context) -> str:
+    async def get_error_log(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Get the Home Assistant core error log.
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw error log text from the HA logger.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get("/api/error_log")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_supervisor_logs(ctx: Context) -> str:
+    async def get_supervisor_logs(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Get logs from the Home Assistant Supervisor process.
 
@@ -42,16 +51,22 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw Supervisor log output.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"{_SUPERVISOR_PREFIX}/supervisor/logs")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_core_logs(ctx: Context) -> str:
+    async def get_core_logs(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Get logs from the Home Assistant Core process via Supervisor.
 
@@ -59,16 +74,22 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw Core process log output.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"{_SUPERVISOR_PREFIX}/core/logs")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_host_logs(ctx: Context) -> str:
+    async def get_host_logs(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Get system-level host logs from the underlying OS.
 
@@ -76,16 +97,22 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw host/journald log output.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"{_SUPERVISOR_PREFIX}/host/logs")
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def get_multicast_logs(ctx: Context) -> str:
+    async def get_multicast_logs(
+        ctx: Context,
+        instance: str = "",
+    ) -> str:
         """
         Get logs from the Home Assistant Multicast service.
 
@@ -93,10 +120,13 @@ def register(mcp: FastMCP) -> None:
 
         Args:
             ctx: MCP request context (injected by FastMCP).
+            instance: HA instance name from the config file. Uses the default
+                      instance if omitted.
 
         Returns:
             Raw Multicast service log output.
         """
 
-        client: HomeAssistantClient = ctx.request_context.lifespan_context.client
+        state = ctx.request_context.lifespan_context
+        client: HomeAssistantClient = state.clients[instance or state.default_instance]
         return await client.get(f"{_SUPERVISOR_PREFIX}/multicast/logs")

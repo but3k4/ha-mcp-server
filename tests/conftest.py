@@ -62,11 +62,12 @@ def mock_ctx(mock_client: MagicMock) -> MagicMock:
     """
     Return a mock MCP Context with lifespan state pre-wired.
 
-    ctx.request_context.lifespan_context.client resolves to the mock_client
-    fixture, matching the structure that tool functions expect when they
-    retrieve the client via: ctx.request_context.lifespan_context.client.
+    ctx.request_context.lifespan_context.clients is a dict keyed by instance
+    name, and default_instance is set to "default". Tool functions resolve the
+    client via state.clients[instance or state.default_instance].
     """
 
     ctx = MagicMock()
-    ctx.request_context.lifespan_context.client = mock_client
+    ctx.request_context.lifespan_context.clients = {"default": mock_client}
+    ctx.request_context.lifespan_context.default_instance = "default"
     return ctx
